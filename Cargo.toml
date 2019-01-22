@@ -1,0 +1,8 @@
+[package]
+
+	name    = "ekke_rpc"
+	version = "0.1.0"
+	authors = [ "Naja Melan <najamelan@autistici.org>" ]
+	edition = "2018"
+
+[dependencies]
