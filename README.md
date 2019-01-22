@@ -1,2 +1,2 @@
-# ekke_rpc
-Remote Procedure Call library for the ekke framework
+# ekke_io
+Input/Output library for the ekke framework

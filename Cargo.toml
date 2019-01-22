@@ -1,6 +1,6 @@
 [package]
 
-	name    = "ekke_rpc"
+	name    = "ekke_io"
 	version = "0.1.0"
 	authors = [ "Naja Melan <najamelan@autistici.org>" ]
 	edition = "2018"
