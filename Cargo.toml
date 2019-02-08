@@ -5,4 +5,30 @@
 	authors = [ "Naja Melan <najamelan@autistici.org>" ]
 	edition = "2018"
 
+
 [dependencies]
+
+	actix            = ">= 0.7.9"
+	failure          = ">= 0.1.5"
+
+	serde            = "1.0.87"
+	serde_bytes      = "0.10.4"
+	serde_cbor       = "0.9.0"
+	serde_derive     = "1.0.87"
+
+	tokio            = { version = "0.1.15", features = ["async-await-preview"] }
+	tokio-uds        = "*"
+	tokio-serde-cbor = "0.3.1"
+
+
+[dependencies.futures-core-preview]
+
+	default-features = false
+	version          = "0.3.0-alpha.12"
+
+
+[dependencies.futures-util-preview]
+
+	default-features = false
+	features         = ["tokio-compat"]
+	version          = "0.3.0-alpha.12"
