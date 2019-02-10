@@ -19,6 +19,9 @@
 	tokio            = { version = "0.1.15", features = ["async-await-preview"] }
 	tokio-uds        = "*"
 	tokio-serde-cbor = "0.3.1"
+slog = "2.4.1"
+backtrace = "0.3.13"
+regex = "1.1.0"
 
 
 [dependencies.futures-core-preview]

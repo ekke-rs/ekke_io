@@ -2,16 +2,15 @@ use crate::{ IpcMessage, IpcConnTrack };
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use tokio::codec::Decoder;
-use tokio_serde_cbor::{ Codec };
-
 use actix::prelude::*;
+use futures_util::{future::FutureExt, try_future::TryFutureExt};
+use slog::{ Logger, error, info };
+
+use tokio::prelude::{ *, stream::{SplitSink, SplitStream} };
+use tokio::codec::{ Decoder, Framed };
+use tokio_serde_cbor::{ Codec };
 use tokio_uds::UnixStream;
 
-use tokio::codec::Framed;
-use tokio::prelude::stream::{SplitSink, SplitStream};
-use tokio::prelude::*;
-use futures_util::{future::FutureExt, try_future::TryFutureExt};
 
 
 
@@ -19,11 +18,12 @@ use futures_util::{future::FutureExt, try_future::TryFutureExt};
 /// Will forward any IpcMessage you send to it on the network stream serialized as cbor, and will send every incoming message to your dispatcher.
 /// Currently uses Rc on a field because actix normally keeps an actor in the same thread. This might change later to make it Send and Sync.
 ///
-#[ derive( Debug ) ]
+#[ derive( Debug ) ]  #[allow(clippy::type_complexity)]
 //
 pub struct IpcPeer
 {
-	sink: Rc<RefCell< SplitSink<Framed<UnixStream, Codec<IpcMessage, IpcMessage>>> >>
+	  sink: Rc<RefCell< SplitSink<Framed<UnixStream, Codec<IpcMessage, IpcMessage>>> >>
+	, log : Logger
 }
 
 impl Actor for IpcPeer { type Context = Context<Self>; }
@@ -31,15 +31,16 @@ impl Actor for IpcPeer { type Context = Context<Self>; }
 
 impl IpcPeer
 {
-	pub fn new( connection: UnixStream, dispatch: Recipient<IpcConnTrack>, addr: Addr<Self> ) -> Self
+	pub fn new( connection: UnixStream, dispatch: Recipient<IpcConnTrack>, addr: Addr<Self>, log: Logger ) -> Self
 	{
 		let codec: Codec<IpcMessage, IpcMessage>  = Codec::new().packed( true );
 
 		let (sink, stream) = codec.framed( connection ).split();
+		let listen_log     = log.clone();
 
 		Arbiter::spawn( async move
 		{
-			await!( Self::listen( stream, dispatch, addr ) );
+			await!( Self::listen( stream, dispatch, addr, listen_log ) );
 
 			Ok(())
 
@@ -47,7 +48,8 @@ impl IpcPeer
 
 		Self
 		{
-			sink: Rc::new( RefCell::new( sink ))
+			  sink: Rc::new( RefCell::new( sink ))
+			, log
 		}
 
 	}
@@ -57,7 +59,7 @@ impl IpcPeer
 	///
 	#[ inline ]
 	//
-	async fn listen( mut stream: SplitStream<Framed<UnixStream, Codec<IpcMessage, IpcMessage>>>, dispatch: Recipient<IpcConnTrack>, self_addr: Addr<Self> )
+	async fn listen( mut stream: SplitStream<Framed<UnixStream, Codec<IpcMessage, IpcMessage>>>, dispatch: Recipient<IpcConnTrack>, self_addr: Addr<Self>, log: Logger )
 	{
 		loop
 		{
@@ -72,7 +74,7 @@ impl IpcPeer
 						Ok ( frame ) => frame,
 						Err( error ) =>
 						{
-							eprintln!( "Error extracting IpcMessage from stream: {:#?}", error );
+							error!( &log, "Error extracting IpcMessage from stream: {:#?}", error );
 							continue;
 						}
 					}
@@ -81,13 +83,17 @@ impl IpcPeer
 				None => return     // Disconnected
 			};
 
+			// TODO: don't clone every iteration!
+			//
+			let log_loop = log.clone();
+
 
 			Arbiter::spawn
 			(
 				dispatch.send( IpcConnTrack{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() } )
 
 					.map(|_|())
-					.map_err(|e| eprintln!( "IpcPeer::listen -> mailbox error: {}", e ))
+					.map_err( move |e| error!( log_loop, "IpcPeer::listen -> Dispatcher: mailbox error: {}", e ))
 			);
 		}
 	}
@@ -102,6 +108,7 @@ impl Handler< IpcMessage > for IpcPeer
 	fn handle( &mut self, msg: IpcMessage, _ctx: &mut Context<Self> ) -> Self::Result
 	{
 		let sink = self.sink.clone();
+		let log  = self.log.clone();
 
 		Arbiter::spawn( async move
 		{
@@ -109,8 +116,8 @@ impl Handler< IpcMessage > for IpcPeer
 
 			match await!( stay_alive.send_async( msg ) )
 			{
-				Ok (_) => { println! ( "Ekke: successfully wrote to stream"       ); },
-				Err(e) => { eprintln!( "Ekke: failed to write to stream: {:?}", e ); }
+				Ok (_) => { info! ( log, "Ekke: successfully wrote to stream"       ); },
+				Err(e) => { error!( log, "Ekke: failed to write to stream: {:?}", e ); }
 			}
 
 			Ok(())

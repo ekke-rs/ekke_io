@@ -13,12 +13,13 @@
 //! - Http Server for frontends (websockets)
 //
 
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization ) ]
+#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type ) ]
 
 mod errors;
 mod ipc_peer;
 mod ipc_message;
 mod actix_helpers;
+mod log;
 
 pub use errors::
 {
@@ -38,9 +39,10 @@ pub use ipc_message::
 	  IpcMessage
 	, IpcConnTrack
 };
-/*
-pub use actix_helpers::
-{
-	impl_message_response
-};*/
 
+pub use log::
+{
+	  ThreadLocalDrain
+	, FnGuard
+	, ResultExtSlog
+};
