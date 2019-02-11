@@ -1,69 +1,57 @@
-use std::fmt::{ Debug, Display };
+use std::fmt::{ Debug };
 use backtrace::Backtrace;
 use regex::Regex;
-use slog::*;
+use slog::{ Logger, trace, debug, info, warn, error, crit, Level };
+use failure::{ Fail };
 
 
 
-pub trait ResultExtSlog<T>
+pub trait ResultExtSlog<T, E>
+
+	where E: Fail
 {
-	fn expects( self, log: Logger, msg: &str ) -> T;
-	fn unwraps( self, log: Logger            ) -> T;
+	fn unwraps( self, log: &Logger                   ) -> T;
+	fn log    ( self, log: &Logger, lvl: slog::Level ) -> Result<T,E>;
 }
 
 
-impl<T, E> ResultExtSlog<T> for std::result::Result<T, E> where E: Display + Debug
+impl<T, E> ResultExtSlog<T, E> for Result<T, E> where E: Fail + Debug
 {
-	fn expects( self, log: Logger, msg: &str ) -> T
+	fn unwraps( self, log: &Logger ) -> T
 	{
 		self.map_err( |e|
 		{
-			error!( log, "{}: {} -> Error: {}" , demangle( "expects" ), msg, e );
+			crit!( log, "{} -> Error: {}" , demangle( "unwraps" ), e );
 			e
 
 		}).unwrap()
 	}
 
 
-	fn unwraps( self, log: Logger ) -> T
+	fn log( self, log: &Logger, lvl: Level ) -> Result<T, E>
 	{
 		self.map_err( |e|
 		{
-			error!( log, "{} -> Error: {}" , demangle( "unwraps" ), e );
+			match lvl
+			{
+				Level::Trace    => trace!( log, "{}", e ),
+				Level::Debug    => debug!( log, "{}", e ),
+				Level::Info     => info! ( log, "{}", e ),
+				Level::Warning  => warn! ( log, "{}", e ),
+				Level::Error    => error!( log, "{}", e ),
+				Level::Critical => crit! ( log, "{}", e ),
+			}
+
 			e
-
-		}).unwrap()
-	}
-}
-
-
-impl<T, E> ResultExtSlog<T> for std::result::Result<T, E> where E: Debug
-{
-	default fn expects( self, log: Logger, msg: &str ) -> T
-	{
-		self.map_err( |e|
-		{
-			error!( log, "{}: {} -> Error: {:?}" , demangle( "expects" ), msg, e );
-			panic!();
-
-		}).unwrap()
-	}
-
-
-	default fn unwraps( self, log: Logger ) -> T
-	{
-		self.map_err( |e|
-		{
-			error!( log, "{} -> Error: {:?}" , demangle( "unwraps" ), e );
-			panic!();
-
-		}).unwrap()
+		})
 	}
 }
 
 
 
 // Demangle the API of the backtrace crate!
+//
+// Returns the caller function name + file:lineno for logging in ResultExtSlog
 //
 fn demangle( which: &str ) -> String
 {
@@ -91,6 +79,10 @@ fn demangle( which: &str ) -> String
 
 
 
+// Will return the function name from a string returned by backtrace:
+//
+// ekke::main::dkk39ru458u3 -> main
+//
 fn strip( input: String ) -> String
 {
 	let re = Regex::new( r"(\w+)::[[:alnum:]]+$" ).unwrap();
@@ -107,3 +99,4 @@ fn strip( input: String ) -> String
 
 		.unwrap_or( input )
 }
+

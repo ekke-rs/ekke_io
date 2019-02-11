@@ -12,7 +12,7 @@
 //!   It could abstract out over all possible mechanisms, as stdin/stdout, ...
 //! - Http Server for frontends (websockets)
 //
-
+#![ forbid( unsafe_code ) ]
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type ) ]
 
 mod errors;
@@ -24,7 +24,7 @@ mod log;
 pub use errors::
 {
 	  EkkeResult
-	, EkkeError
+	, EkkeIoError
 };
 
 
@@ -46,3 +46,4 @@ pub use log::
 	, FnGuard
 	, ResultExtSlog
 };
+

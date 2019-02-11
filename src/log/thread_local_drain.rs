@@ -1,3 +1,5 @@
+//! Taken from https://github.com/utsl42/actix-test
+
 use slog::*;
 
 thread_local!( static TL_THREAD_ID: std::thread::ThreadId = std::thread::current().id() );

@@ -1,16 +1,16 @@
-use crate::{ IpcMessage, IpcConnTrack };
-use std::rc::Rc;
-use std::cell::RefCell;
+use std              :: { rc::Rc, cell::RefCell                       };
 
-use actix::prelude::*;
-use futures_util::{future::FutureExt, try_future::TryFutureExt};
-use slog::{ Logger, error, info };
+use actix::prelude   :: { *                                           };
+use failure          :: { ResultExt                                   };
+use futures_util     :: { future::FutureExt, try_future::TryFutureExt };
+use slog             :: { Logger, error, info                         };
 
-use tokio::prelude::{ *, stream::{SplitSink, SplitStream} };
-use tokio::codec::{ Decoder, Framed };
-use tokio_serde_cbor::{ Codec };
-use tokio_uds::UnixStream;
+use tokio::prelude   :: { *, stream::{ SplitSink, SplitStream }       };
+use tokio::codec     :: { Decoder, Framed                             };
+use tokio_serde_cbor :: { Codec                                       };
+use tokio_uds        :: { UnixStream                                  };
 
+use crate            ::{ IpcMessage, IpcConnTrack, ResultExtSlog      };
 
 
 
@@ -92,8 +92,7 @@ impl IpcPeer
 			(
 				dispatch.send( IpcConnTrack{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() } )
 
-					.map(|_|())
-					.map_err( move |e| error!( log_loop, "IpcPeer::listen -> Dispatcher: mailbox error: {}", e ))
+					.then( move |r| { r.context( "IpcPeer::listen -> Dispatcher: mailbox error." ).unwraps( &log_loop ); Ok(())} )
 			);
 		}
 	}

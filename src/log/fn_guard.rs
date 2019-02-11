@@ -1,3 +1,5 @@
+//! Taken from https://github.com/utsl42/actix-test
+
 use slog::*;
 
 pub struct FnGuard
