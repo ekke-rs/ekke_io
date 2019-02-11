@@ -12,7 +12,7 @@
 	backtrace        = ">= 0.3.13"
 	failure          = ">= 0.1.5"
 	regex            = "1.1.0"
-	slog             = "2.4.1"
+	slog             = { version = "~2.4.1", features = ["max_level_trace", "release_max_level_warn"] }
 
 	serde            = "1.0.87"
 	serde_bytes      = "0.10.4"
