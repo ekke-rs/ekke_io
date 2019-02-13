@@ -107,7 +107,7 @@ impl Handler< IpcMessage > for IpcPeer
 	fn handle( &mut self, msg: IpcMessage, _ctx: &mut Context<Self> ) -> Self::Result
 	{
 		let sink = self.sink.clone();
-		let log  = self.log.clone();
+		let log  = self.log .clone();
 
 		Arbiter::spawn( async move
 		{

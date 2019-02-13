@@ -13,13 +13,15 @@
 //! - Http Server for frontends (websockets)
 //
 #![ forbid( unsafe_code ) ]
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type ) ]
+#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures ) ]
 
+mod actix_helpers;
+mod dispatcher;
 mod errors;
 mod ipc_peer;
 mod ipc_message;
-mod actix_helpers;
 mod log;
+mod service;
 
 pub use errors::
 {
@@ -45,5 +47,18 @@ pub use log::
 	  ThreadLocalDrain
 	, FnGuard
 	, ResultExtSlog
+};
+
+
+pub use dispatcher::
+{
+	  Dispatcher
+	, RegisterService
+};
+
+
+pub use service::
+{
+	  Service
 };
 

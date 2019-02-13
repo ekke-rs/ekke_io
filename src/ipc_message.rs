@@ -71,5 +71,3 @@ pub struct IpcConnTrack
 	  pub ipc_peer: Recipient< IpcMessage >
 	, pub ipc_msg : IpcMessage
 }
-
-
