@@ -33,9 +33,8 @@ What does it all mean for apps in other languages?
 # todo
 
 - ipc:
-  - dispatcher: maybe take ipcmessage instead of IpcConntrack? Let IpcMessage have a `reply_to` field with an Option< Recipient<IpcMessage> > and a conn_id
+  - dispatcher: maybe take new message types instead of IpcConntrack? Let IpcMessage have a `reply_to` field with an Option< Recipient<IpcMessage> > and a conn_id
   - try to make dependency on slog and typename optional
-  - ipcpeer: take an AsyncRead/AsyncWrite so we can use it for all sorts of streams
   - ipcpeer and ipcmessage: codec as option so people aren't obliged to use cbor
   - what does the double serialization cost us? Use Bytes for the outer one and CBOR for the inner one? or the other way around?
   - dispatcher: replace hashmap with hashbrown

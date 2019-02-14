@@ -8,7 +8,6 @@ use slog             :: { Logger, error, info                         };
 use tokio::prelude   :: { *, stream::{ SplitSink, SplitStream }       };
 use tokio::codec     :: { Decoder, Framed                             };
 use tokio_serde_cbor :: { Codec                                       };
-use tokio_uds        :: { UnixStream                                  };
 
 use crate            ::{ IpcMessage, IpcConnTrack, ResultExtSlog      };
 
@@ -20,18 +19,25 @@ use crate            ::{ IpcMessage, IpcConnTrack, ResultExtSlog      };
 ///
 #[ derive( Debug ) ]  #[allow(clippy::type_complexity)]
 //
-pub struct IpcPeer
+pub struct IpcPeer<S>
+
+	where S: AsyncRead + AsyncWrite
+
 {
-	  sink: Rc<RefCell< SplitSink<Framed<UnixStream, Codec<IpcMessage, IpcMessage>>> >>
+	  sink: Rc<RefCell< SplitSink<Framed<S, Codec<IpcMessage, IpcMessage>>> >>
 	, log : Logger
 }
 
-impl Actor for IpcPeer { type Context = Context<Self>; }
+impl<S> Actor for IpcPeer<S> where S: AsyncRead + AsyncWrite + 'static
+{ type Context = Context<Self>; }
 
 
-impl IpcPeer
+impl<S> IpcPeer<S>
+
+	where S: AsyncRead + AsyncWrite + 'static
+
 {
-	pub fn new( connection: UnixStream, dispatch: Recipient<IpcConnTrack>, addr: Addr<Self>, log: Logger ) -> Self
+	pub fn new( connection: S, dispatch: Recipient<IpcConnTrack>, addr: Addr<Self>, log: Logger ) -> Self
 	{
 		let codec: Codec<IpcMessage, IpcMessage>  = Codec::new().packed( true );
 
@@ -59,7 +65,7 @@ impl IpcPeer
 	///
 	#[ inline ]
 	//
-	async fn listen( mut stream: SplitStream<Framed<UnixStream, Codec<IpcMessage, IpcMessage>>>, dispatch: Recipient<IpcConnTrack>, self_addr: Addr<Self>, log: Logger )
+	async fn listen( mut stream: SplitStream<Framed<S, Codec<IpcMessage, IpcMessage>>>, dispatch: Recipient<IpcConnTrack>, self_addr: Addr<Self>, log: Logger )
 	{
 		loop
 		{
@@ -100,7 +106,10 @@ impl IpcPeer
 
 
 
-impl Handler< IpcMessage > for IpcPeer
+impl<S> Handler< IpcMessage > for IpcPeer<S>
+
+	where S: AsyncRead + AsyncWrite + 'static
+
 {
 	type Result = ();
 
