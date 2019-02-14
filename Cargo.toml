@@ -21,7 +21,9 @@
 	serde_derive     = "1.0.87"
 
 
-	tokio            = { version = "0.1.15", features = ["async-await-preview"] }
+	tokio             = { version = "0.1.15", features = ["async-await-preview"] }
+	tokio-async-await = "~0.1.5"
+
 	tokio-uds        = "*"
 	tokio-serde-cbor = "0.3.1"
 

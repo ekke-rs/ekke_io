@@ -46,17 +46,6 @@ What does it all mean for apps in other languages?
 
 Eventloop service actor
 
-```rust
-Response  < RegisterApplication >
-Request   < RegisterApplication >
-Broadcast < RegisterApplication >
-Announce  < RegisterApplication >
-Ack       < RegisterApplication >
-
-"RegisterApplication"
-
-
-```
 
 ## Request response flow
 

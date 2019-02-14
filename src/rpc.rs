@@ -8,6 +8,10 @@ use serde             :: { de::DeserializeOwned                              } ;
 
 use slog              :: { Logger                                         } ;
 use tokio::prelude    :: { Future                                         } ;
+use tokio_async_await :: { await                                          } ;
+
+use futures_util     :: { future::FutureExt, try_future::TryFutureExt };
+
 
 use crate             :: { EkkeIoError, MessageType, ConnID } ;
 use crate           :: { ReceiveRequest, IpcMessage, ResultExtSlog,       } ;
@@ -58,6 +62,7 @@ impl Rpc
 		where
 
 			INTO: DeserializeOwned + Message + Send + 'static,
+			INTO: Message< Result = IpcMessage >,
 			INTO::Result: Send,
 	{
 		let name = msg.service.clone();
@@ -105,20 +110,21 @@ impl Rpc
 
 				// Send the message to the service actor and wait for a response to send back to the peer
 				//
-				// let addr = service.clone();
+				let addr = recipient.clone();
 
-				Arbiter::spawn
-				(
-					recipient.send( de )
+				Arbiter::spawn( async move
+				{
+					let try_resp = await!( addr.send( de ) );
 
-						.then( move |r|
-						{
-							r.context( format!( "Rpc::Handler<ReceiveRequest> -> {}: mailbox error.", &name ) )
-							 .unwraps( &log );
+					let resp = try_resp.context( format!( "Rpc::Handler<ReceiveRequest> -> {}: mailbox error.", &name ) )
+					    .unwraps( &log );
 
-							Ok(())
-						})
-				)
+					await!( ipc_peer.send( resp ) ).unwraps( &log );
+
+
+					Ok(())
+
+				}.boxed().compat() )
 			},
 
 			// There is no handler for this service, let the peer app know
@@ -160,7 +166,7 @@ impl<M> Handler<RegisterService<M>> for Rpc
 
 where
 
-	M: Message<Result = ()> + Send + 'static
+	M: Send + Message<Result = IpcMessage> + 'static
 {
 	type Result = ();
 
@@ -192,7 +198,7 @@ where
 pub struct RegisterService<M>
 
 where
-	M: Message<Result = ()> + Send + 'static
+	M: Message<Result = IpcMessage> + Send + 'static
 {
 	pub service  : String,
 	pub actor    : String,

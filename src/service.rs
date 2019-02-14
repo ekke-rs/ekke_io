@@ -1,6 +1,6 @@
 use actix::{ prelude::*, dev::ToEnvelope };
 use typename::TypeName;
-use crate::{ Rpc, RegisterService };
+use crate::{ Rpc, RegisterService, IpcMessage };
 use std::any::TypeId;
 
 pub trait Service
@@ -15,8 +15,9 @@ pub trait Service
 	where
 
 		Self: Handler<M>,
-		<Self as Actor>::Context: ToEnvelope<Self, M>,
-		M: Message + TypeName + Send + Message<Result = ()> + 'static
+		<Self as Actor>::Context: ToEnvelope<Self, M> +,
+		Self: Handler<M, Result = IpcMessage>,
+		M: Message + TypeName + Send + Message<Result = IpcMessage> + 'static
 	{
 		dispatcher.do_send
 		(
