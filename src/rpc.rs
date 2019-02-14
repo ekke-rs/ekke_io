@@ -9,25 +9,25 @@ use serde             :: { de::DeserializeOwned                              } ;
 use slog              :: { Logger                                         } ;
 use tokio::prelude    :: { Future                                         } ;
 
-use crate             :: { EkkeIoError } ;
+use crate             :: { EkkeIoError, MessageType, ConnID } ;
 use crate           :: { IpcConnTrack, IpcMessage, ResultExtSlog,       } ;
 
 
 
 #[ derive( Debug ) ]
 //
-pub struct Dispatcher
+pub struct Rpc
 {
 	  handlers: HashMap< TypeId, Box< dyn Any > >
 	, log     : Logger
 	, matcher : fn( IpcConnTrack, &Self )
 }
 
-impl Actor for Dispatcher { type Context = Context<Self>; }
+impl Actor for Rpc { type Context = Context<Self>; }
 
 
 
-impl Dispatcher
+impl Rpc
 {
 	pub fn new( log: Logger, matcher: fn( IpcConnTrack, &Self ) ) -> Self
 	{
@@ -44,9 +44,9 @@ impl Dispatcher
 		Arbiter::spawn
 		(
 
-			addr.send( IpcMessage::new( "EkkeServerError".into(), error ) )
+			addr.send( IpcMessage::new( "EkkeServerError".into(), error, MessageType::Error, ConnID::new() ) )
 
-				.then( move |r| { r.context( "Dispatcher::error_response -> IpcPeer: mailbox error." ).unwraps( &log ); Ok(())} )
+				.then( move |r| { r.context( "Rpc::error_response -> IpcPeer: mailbox error." ).unwraps( &log ); Ok(())} )
 
 		);
 	}
@@ -113,7 +113,7 @@ impl Dispatcher
 
 						.then( move |r|
 						{
-							r.context( format!( "Dispatcher::Handler<IpcConnTrack> -> {}: mailbox error.", &name ) )
+							r.context( format!( "Rpc::Handler<IpcConnTrack> -> {}: mailbox error.", &name ) )
 							 .unwraps( &log );
 
 							Ok(())
@@ -136,7 +136,7 @@ impl Dispatcher
 
 /// Handle incoming IPC messages
 ///
-impl Handler<IpcConnTrack> for Dispatcher
+impl Handler<IpcConnTrack> for Rpc
 {
 	type Result = ();
 
@@ -156,7 +156,7 @@ impl Handler<IpcConnTrack> for Dispatcher
 /// We need to keep a list of service->actor handler mappings at runtime. This is where services
 /// register.
 ///
-impl<M> Handler<RegisterService<M>> for Dispatcher
+impl<M> Handler<RegisterService<M>> for Rpc
 
 where
 

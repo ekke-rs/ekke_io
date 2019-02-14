@@ -16,12 +16,19 @@
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures ) ]
 
 mod actix_helpers;
-mod dispatcher;
+mod conn_id;
+mod rpc;
 mod errors;
 mod ipc_peer;
 mod ipc_message;
 mod log;
 mod service;
+
+pub use conn_id::
+{
+	  ConnID
+};
+
 
 pub use errors::
 {
@@ -40,6 +47,14 @@ pub use ipc_message::
 {
 	  IpcMessage
 	, IpcConnTrack
+	, SendRequest
+	, ReceiveRequest
+	, Response
+	, Error
+	, PleaseAck
+	, Ack
+	, Broadcast
+	, MessageType
 };
 
 pub use log::
@@ -50,9 +65,9 @@ pub use log::
 };
 
 
-pub use dispatcher::
+pub use rpc::
 {
-	  Dispatcher
+	  Rpc
 	, RegisterService
 };
 

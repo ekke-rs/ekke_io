@@ -25,6 +25,9 @@
 	tokio-uds        = "*"
 	tokio-serde-cbor = "0.3.1"
 
+	# Dependency on rand_core only because different versions in the dependency tree break compilation.
+	rand_core = "0.4"
+	rand = "0.6.5"
 
 [dependencies.futures-core-preview]
 

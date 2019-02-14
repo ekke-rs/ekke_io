@@ -1,21 +1,22 @@
+use std::fmt::Display;
 use std::fmt::{ Debug };
 use backtrace::Backtrace;
 use regex::Regex;
 use slog::{ Logger, trace, debug, info, warn, error, crit, Level };
-use failure::{ Fail };
+// use failure::{ Fail };
 
 
 
 pub trait ResultExtSlog<T, E>
 
-	where E: Fail
+	where E: Display + Debug
 {
 	fn unwraps( self, log: &Logger                   ) -> T;
 	fn log    ( self, log: &Logger, lvl: slog::Level ) -> Result<T,E>;
 }
 
 
-impl<T, E> ResultExtSlog<T, E> for Result<T, E> where E: Fail + Debug
+impl<T, E> ResultExtSlog<T, E> for Result<T, E> where E: Display + Debug
 {
 	fn unwraps( self, log: &Logger ) -> T
 	{

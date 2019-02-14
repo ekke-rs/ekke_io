@@ -92,7 +92,7 @@ impl IpcPeer
 			(
 				dispatch.send( IpcConnTrack{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() } )
 
-					.then( move |r| { r.context( "IpcPeer::listen -> Dispatcher: mailbox error." ).unwraps( &log_loop ); Ok(())} )
+					.then( move |r| { r.context( "IpcPeer::listen -> Rpc: mailbox error." ).unwraps( &log_loop ); Ok(())} )
 			);
 		}
 	}

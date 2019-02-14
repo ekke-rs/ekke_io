@@ -1,6 +1,6 @@
 use actix::{ prelude::*, dev::ToEnvelope };
 use typename::TypeName;
-use crate::{ Dispatcher, RegisterService };
+use crate::{ Rpc, RegisterService };
 use std::any::TypeId;
 
 pub trait Service
@@ -10,7 +10,7 @@ pub trait Service
 	<Self as Actor>::Context: AsyncContext<Self>
 {
 
-	fn register_service<M>( &self, dispatcher: &Addr< Dispatcher >, ctx: &mut Self::Context )
+	fn register_service<M>( &self, dispatcher: &Addr< Rpc >, ctx: &mut Self::Context )
 
 	where
 
