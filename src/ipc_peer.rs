@@ -9,12 +9,12 @@ use tokio::prelude   :: { *, stream::{ SplitSink, SplitStream }       };
 use tokio::codec     :: { Decoder, Framed                             };
 use tokio_serde_cbor :: { Codec                                       };
 
-use crate            ::{ IpcMessage, ReceiveRequest, ResultExtSlog, MessageType };
+use crate            ::{ IpcMessage, ReceiveRequest, Response, ResultExtSlog, MessageType, Rpc };
 
 
 
 /// Hides the underlying socket handling from client. The constructor takes a unix stream, but later will probably take any stream type. It also takes a Recipient<ReceiveRequest> to forward incoming messages to and it needs it's own address for setting up listening, so you should create this with `Actor::create` and `IpcPeer::new`.
-/// Will forward any IpcMessage you send to it on the network stream serialized as cbor, and will send every incoming message to your dispatcher.
+/// Will forward any IpcMessage you send to it on the network stream serialized as cbor, and will send every incoming message to your rpc.
 /// Currently uses Rc on a field because actix normally keeps an actor in the same thread. This might change later to make it Send and Sync.
 ///
 #[ derive( Debug ) ]  #[allow(clippy::type_complexity)]
@@ -37,7 +37,7 @@ impl<S> IpcPeer<S>
 	where S: AsyncRead + AsyncWrite + 'static
 
 {
-	pub fn new( connection: S, dispatch: Recipient<ReceiveRequest>, addr: Addr<Self>, log: Logger ) -> Self
+	pub fn new( connection: S, rpc: Addr<Rpc>, addr: Addr<Self>, log: Logger ) -> Self
 	{
 		let codec: Codec<IpcMessage, IpcMessage>  = Codec::new().packed( true );
 
@@ -46,7 +46,7 @@ impl<S> IpcPeer<S>
 
 		Arbiter::spawn( async move
 		{
-			await!( Self::listen( stream, dispatch, addr, listen_log ) );
+			await!( Self::listen( stream, rpc, addr, listen_log ) );
 
 			Ok(())
 
@@ -61,11 +61,11 @@ impl<S> IpcPeer<S>
 	}
 
 
-	/// Will listen to a connection and send all incoming messages to the dispatch.
+	/// Will listen to a connection and send all incoming messages to the rpc.
 	///
 	#[ inline ]
 	//
-	async fn listen( mut stream: SplitStream<Framed<S, Codec<IpcMessage, IpcMessage>>>, dispatch: Recipient<ReceiveRequest>, self_addr: Addr<Self>, log: Logger )
+	async fn listen( mut stream: SplitStream<Framed<S, Codec<IpcMessage, IpcMessage>>>, rpc: Addr<Rpc>, self_addr: Addr<Self>, log: Logger )
 	{
 		loop
 		{
@@ -93,19 +93,34 @@ impl<S> IpcPeer<S>
 			//
 			let log_loop = log.clone();
 
-			let forward = match frame.ms_type
+			match frame.ms_type
 			{
-				MessageType::ReceiveRequest => ReceiveRequest{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() },
-				_                           => unreachable!()
+				MessageType::ReceiveRequest =>
+				{
+					Arbiter::spawn
+					(
+						rpc.send( ReceiveRequest{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() } )
+
+							.then( move |r| { r.context( "IpcPeer::listen -> Rpc: mailbox error." ).unwraps( &log_loop ); Ok(())} )
+					);
+				},
+
+				MessageType::Response =>
+				{
+					Arbiter::spawn
+					(
+						rpc.send( Response{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() } )
+
+							.then( move |r| { r.context( "IpcPeer::listen -> Rpc: mailbox error." ).unwraps( &log_loop ); Ok(())} )
+					);
+				},
+
+				_ =>
+				{
+					error!( log, "Unimplemented message type: {:?}", frame.ms_type );
+					unreachable!()
+				}
 			};
-
-
-			Arbiter::spawn
-			(
-				dispatch.send( forward )
-
-					.then( move |r| { r.context( "IpcPeer::listen -> Rpc: mailbox error." ).unwraps( &log_loop ); Ok(())} )
-			);
 		}
 	}
 }

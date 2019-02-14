@@ -79,7 +79,8 @@ impl IpcMessage
 }
 
 
-#[ derive( Message ) ] pub struct SendRequest    { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] #[rtype(result="Response")] pub struct SendRequest    { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+
 #[ derive( Message ) ] pub struct ReceiveRequest { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 #[ derive( Message ) ] pub struct Response       { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 #[ derive( Message ) ] pub struct Error          { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }

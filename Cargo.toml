@@ -8,17 +8,18 @@
 
 [dependencies]
 
-	actix            = ">= 0.7.9"
-	backtrace        = ">= 0.3.13"
-	failure          = ">= 0.1.5"
-	regex            = "1.1.0"
-	slog             = { version = "~2.4.1", features = ["max_level_trace", "release_max_level_warn"] }
-	typename         = "0.1.0"
+	actix             = ">= 0.7.9"
+	actix-async-await = "0.2.0"
+	backtrace         = ">= 0.3.13"
+	failure           = ">= 0.1.5"
+	regex             = "1.1.0"
+	slog              = { version = "~2.4.1", features = ["max_level_trace", "release_max_level_warn"] }
+	typename          = "0.1.0"
 
-	serde            = "1.0.87"
-	serde_bytes      = "0.10.4"
-	serde_cbor       = "0.9.0"
-	serde_derive     = "1.0.87"
+	serde             = "1.0.87"
+	serde_bytes       = "0.10.4"
+	serde_cbor        = "0.9.0"
+	serde_derive      = "1.0.87"
 
 
 	tokio             = { version = "0.1.15", features = ["async-await-preview"] }
@@ -31,10 +32,7 @@
 	rand_core = "0.4"
 	rand = "0.6.5"
 
-[dependencies.futures-core-preview]
-
-	default-features = false
-	version          = "0.3.0-alpha.12"
+	futures-preview = "0.3.0-alpha.12"
 
 
 [dependencies.futures-util-preview]

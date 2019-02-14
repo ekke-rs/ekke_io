@@ -1,28 +1,33 @@
-use std::any::{ Any, TypeId };
+use std::{ any::Any, any::TypeId, rc::Rc, cell::RefCell };
 use std               :: { collections::HashMap                           } ;
 
 use actix             :: { prelude::*                                     } ;
+use actix_async_await :: { ResponseStdFuture as ActixFuture               } ;
 use failure           :: { ResultExt                                      } ;
 use serde_cbor        :: { from_slice as des                              } ;
-use serde             :: { de::DeserializeOwned                              } ;
+use serde             :: { de::DeserializeOwned                           } ;
 
 use slog              :: { Logger                                         } ;
 use tokio::prelude    :: { Future                                         } ;
 use tokio_async_await :: { await                                          } ;
 
-use futures_util     :: { future::FutureExt, try_future::TryFutureExt };
-
+use futures_util      :: { future::FutureExt, try_future::TryFutureExt    } ;
+use futures           :: { channel::oneshot                               } ;
 
 use crate             :: { EkkeIoError, MessageType, ConnID } ;
-use crate           :: { ReceiveRequest, IpcMessage, ResultExtSlog,       } ;
+use crate             :: { ReceiveRequest, SendRequest, Response, IpcMessage, ResultExtSlog,       } ;
 
 
+// mod response_future;
+// use response_future::ResponseFuture;
 
-#[ derive( Debug ) ]
+
+// #[ derive( Debug ) ]
 //
 pub struct Rpc
 {
-	  handlers: HashMap< TypeId, Box< dyn Any > >
+	  handlers : HashMap< TypeId, Box< dyn Any > >,
+	  responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< Response > > >>
 	, log     : Logger
 	, matcher : fn( &Self, IpcMessage, Recipient< IpcMessage > )
 }
@@ -35,7 +40,7 @@ impl Rpc
 {
 	pub fn new( log: Logger, matcher: fn( &Self, IpcMessage, Recipient< IpcMessage > ) ) -> Self
 	{
-		Self { handlers: HashMap::new(), log, matcher }
+		Self { handlers: HashMap::new(), responses: Rc::new( RefCell::new( HashMap::new() )), log, matcher }
 	}
 
 
@@ -53,6 +58,35 @@ impl Rpc
 				.then( move |r| { r.context( "Rpc::error_response -> IpcPeer: mailbox error." ).unwraps( &log ); Ok(())} )
 
 		);
+	}
+
+
+	pub fn deserialize2<INTO>( payload: Vec<u8> ) -> Result< INTO, failure::Error >
+
+	where INTO: DeserializeOwned
+
+	{
+		let de: INTO = match des( &payload )
+		{
+			Ok ( data  ) => data,
+
+			Err( error ) =>
+			{
+				// If we can't deserialize, send an error message to the ipc peer application
+				//
+				// self.error_response
+				// (
+				// 	  format!( "Ekke Server could not deserialize your cbor data for service:{} :{:?}", service, error )
+				// 	, ipc_peer
+				// );
+
+				// If we can't deserialize the message, there's no point in continuing to handle this request.
+				//
+				return Err( error.into() );
+			}
+		};
+
+		Ok( de )
 	}
 
 
@@ -147,7 +181,7 @@ impl Handler<ReceiveRequest> for Rpc
 	type Result = ();
 
 
-	/// Handle incoming IPC messages
+	/// Handle incoming RPC messages
 	///
 	///
 	fn handle( &mut self, msg: ReceiveRequest, _ctx: &mut Context<Self> ) -> Self::Result
@@ -158,6 +192,115 @@ impl Handler<ReceiveRequest> for Rpc
 	}
 }
 
+
+
+/// Handle outgoing RPC messages
+///
+impl Handler<SendRequest> for Rpc
+{
+	type Result = ActixFuture< Response >;
+
+
+	/// Handle outgoing RPC messages
+	///
+	///
+	fn handle( &mut self, mut msg: SendRequest, _ctx: &mut Context<Self> ) -> Self::Result
+	{
+		let (sender, receiver) = oneshot::channel::<Response>();
+
+		self.responses.borrow_mut().insert( msg.ipc_msg.conn_id, sender );
+
+		msg.ipc_msg.ms_type = MessageType::ReceiveRequest;
+		let _ = msg.ipc_peer.do_send( msg.ipc_msg );
+
+
+		let log = self.log.clone();
+
+		ActixFuture::from( async move
+		{
+			await!( receiver ).unwraps( &log )
+		})
+	}
+}
+
+
+
+/// Handle outgoing RPC messages
+///
+impl Handler<Response> for Rpc
+{
+	type Result = ();
+
+
+	/// Handle outgoing RPC messages
+	///
+	///
+	fn handle( &mut self, msg: Response, _ctx: &mut Context<Self> ) -> Self::Result
+	{
+		let mut borrow = self.responses.borrow_mut();
+		let channel = borrow.remove( &msg.ipc_msg.conn_id ).unwrap();
+
+		let _ = channel.send( msg );
+	}
+}
+
+
+
+/*
+/// Handle outgoing RPC messages
+///
+impl Handler<SendRequest> for Rpc
+{
+	type Result = ActixFuture< Response >;
+
+
+	/// Handle outgoing RPC messages
+	///
+	///
+	fn handle( &mut self, mut msg: SendRequest, _ctx: &mut Context<Self> ) -> Self::Result
+	{
+		let conn_id = msg.ipc_msg.conn_id.clone();
+
+		self.responses.borrow_mut().insert( conn_id, Box::new( ResponseFuture::new() ) );
+
+		msg.ipc_msg.ms_type = MessageType::ReceiveRequest;
+		let _ = msg.ipc_peer.do_send( msg.ipc_msg );
+
+		let respf = self.responses.clone();
+
+		ActixFuture::from( async move
+		{
+			let mut borrow = respf.borrow_mut();
+			let f = borrow.get_mut( &conn_id ).unwrap();
+
+			let resp = await!( f );
+			let _ = borrow.remove( &conn_id ).unwrap();
+			resp
+		})
+	}
+}
+
+
+/// Handle outgoing RPC messages
+///
+impl Handler<Response> for Rpc
+{
+	type Result = ();
+
+
+	/// Handle outgoing RPC messages
+	///
+	///
+	fn handle( &mut self, msg: Response, _ctx: &mut Context<Self> ) -> Self::Result
+	{
+		let mut borrow = self.responses.borrow_mut();
+		let fut = borrow.get_mut( &msg.ipc_msg.conn_id ).unwrap();
+
+		fut.response( msg );
+	}
+}
+
+*/
 
 /// We need to keep a list of service->actor handler mappings at runtime. This is where services
 /// register.
