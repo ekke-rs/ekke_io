@@ -38,10 +38,7 @@ What does it all mean for apps in other languages?
   - ipcpeer and ipcmessage: codec as option so people aren't obliged to use cbor
   - what does the double serialization cost us? Use Bytes for the outer one and CBOR for the inner one? or the other way around?
   - dispatcher: replace hashmap with hashbrown
-  - Connection tracking in
   - only bind to one socket for all peer apps? peer authentication?
-  - Recipient does not implement debug
-  - maybe let dispatcher take a trait object
   - create modules that provide the streams to the client
 
 
@@ -80,5 +77,5 @@ Rpc matches conn_id to hashtable
 Rpc wakes up future
 
 # todo
-- rename dispatcher to Rpc
-- Create request/response/ack/...types
+- Use new types instead of IpConnTrack
+- Create request functionality

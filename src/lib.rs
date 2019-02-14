@@ -2,7 +2,7 @@
 //!
 //! Currently it provides an infrastructure allowing Ipc communication with actix actors over unix domain sockets. It provides convenient actors for setting up and listening to the socket.
 //!
-//! It will send IpcConnTrack messages to an actor you provide that acts as a dispatcher. The ipc conntrack message contains the ipc peer address as a connection tracking means. Your dispatcher should deserialize the IpcMessage and send your service actor the service message. IpcMessage also contains a string name which allows your dispatcher to know to which actor to send the contained message.
+//! It will send ReceiveRequest messages to an actor you provide that acts as a dispatcher. The ipc conntrack message contains the ipc peer address as a connection tracking means. Your dispatcher should deserialize the IpcMessage and send your service actor the service message. IpcMessage also contains a string name which allows your dispatcher to know to which actor to send the contained message.
 //!
 //! The ekke_io crate provides all Io functionality for the ekke server as well as being a library that can be compiled to a shared object library for applications to link against. It can thus be used for ffi to allow building applications in other languages that commmunicate with Ekke.
 //!
@@ -46,9 +46,8 @@ pub use ipc_peer::
 pub use ipc_message::
 {
 	  IpcMessage
-	, IpcConnTrack
-	, SendRequest
 	, ReceiveRequest
+	, SendRequest
 	, Response
 	, Error
 	, PleaseAck

@@ -1,7 +1,7 @@
 //! Contains the message types for communicating with IpcPeer. You should send IpcMessage
 //! to IpcPeer to send outgoing communication.
 //!
-//! IpcPeer will send a IpcConnTrack to your dispatcher for incoming requests. Usually the
+//! IpcPeer will send a ReceiveRequest to your dispatcher for incoming requests. Usually the
 //! dispatcher will hold on to the IpcPeer address and deserialize the IpcMessage payload
 //! so your service can receive it's uniquely typed message.
 //! Your service actor can send a response to this request by returning an IpcMessage from
@@ -19,7 +19,7 @@ use crate         :: { impl_message_response, ConnID    } ;
 
 
 /// An IpcPeer will send this to your dispatcher for incoming messages,
-/// wrapped in IpcConnTrack. Holds the serialized actix message in payload.
+/// wrapped in ReceiveRequest. Holds the serialized actix message in payload.
 ///
 /// You should use this to wrap outgoing ipc messages, and use the new method
 /// so the payload gets serialized for you.
@@ -79,32 +79,13 @@ impl IpcMessage
 }
 
 
-
-
-/// Connection tracking structure. In addition to the IpcMessage it holds
-/// the address of the connection. A dispatcher should hold on to this
-/// asynchronously for services that return a response (Request/Response model).
-/// The service usually returns an IpcMessage as a response, and the dispatcher
-/// sends it to the correct IpcPeer.
-///
-#[ derive( Message ) ]
-//
-pub struct IpcConnTrack
-{
-	  pub ipc_peer: Recipient< IpcMessage >
-	, pub ipc_msg : IpcMessage
-}
-
-
-#[ derive( Message ) ]
-//
-pub struct SendRequest    { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
-pub struct ReceiveRequest { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
-pub struct Response       { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
-pub struct Error          { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
-pub struct PleaseAck      { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
-pub struct Ack            { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
-pub struct Broadcast      { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct SendRequest    { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct ReceiveRequest { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct Response       { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct Error          { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct PleaseAck      { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct Ack            { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct Broadcast      { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 
 
 

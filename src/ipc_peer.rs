@@ -9,11 +9,11 @@ use tokio::prelude   :: { *, stream::{ SplitSink, SplitStream }       };
 use tokio::codec     :: { Decoder, Framed                             };
 use tokio_serde_cbor :: { Codec                                       };
 
-use crate            ::{ IpcMessage, IpcConnTrack, ResultExtSlog      };
+use crate            ::{ IpcMessage, ReceiveRequest, ResultExtSlog, MessageType };
 
 
 
-/// Hides the underlying socket handling from client. The constructor takes a unix stream, but later will probably take any stream type. It also takes a Recipient<IpcConnTrack> to forward incoming messages to and it needs it's own address for setting up listening, so you should create this with `Actor::create` and `IpcPeer::new`.
+/// Hides the underlying socket handling from client. The constructor takes a unix stream, but later will probably take any stream type. It also takes a Recipient<ReceiveRequest> to forward incoming messages to and it needs it's own address for setting up listening, so you should create this with `Actor::create` and `IpcPeer::new`.
 /// Will forward any IpcMessage you send to it on the network stream serialized as cbor, and will send every incoming message to your dispatcher.
 /// Currently uses Rc on a field because actix normally keeps an actor in the same thread. This might change later to make it Send and Sync.
 ///
@@ -37,7 +37,7 @@ impl<S> IpcPeer<S>
 	where S: AsyncRead + AsyncWrite + 'static
 
 {
-	pub fn new( connection: S, dispatch: Recipient<IpcConnTrack>, addr: Addr<Self>, log: Logger ) -> Self
+	pub fn new( connection: S, dispatch: Recipient<ReceiveRequest>, addr: Addr<Self>, log: Logger ) -> Self
 	{
 		let codec: Codec<IpcMessage, IpcMessage>  = Codec::new().packed( true );
 
@@ -65,7 +65,7 @@ impl<S> IpcPeer<S>
 	///
 	#[ inline ]
 	//
-	async fn listen( mut stream: SplitStream<Framed<S, Codec<IpcMessage, IpcMessage>>>, dispatch: Recipient<IpcConnTrack>, self_addr: Addr<Self>, log: Logger )
+	async fn listen( mut stream: SplitStream<Framed<S, Codec<IpcMessage, IpcMessage>>>, dispatch: Recipient<ReceiveRequest>, self_addr: Addr<Self>, log: Logger )
 	{
 		loop
 		{
@@ -93,10 +93,16 @@ impl<S> IpcPeer<S>
 			//
 			let log_loop = log.clone();
 
+			let forward = match frame.ms_type
+			{
+				MessageType::ReceiveRequest => ReceiveRequest{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() },
+				_                           => unreachable!()
+			};
+
 
 			Arbiter::spawn
 			(
-				dispatch.send( IpcConnTrack{ ipc_msg: frame, ipc_peer: self_addr.clone().recipient() } )
+				dispatch.send( forward )
 
 					.then( move |r| { r.context( "IpcPeer::listen -> Rpc: mailbox error." ).unwraps( &log_loop ); Ok(())} )
 			);

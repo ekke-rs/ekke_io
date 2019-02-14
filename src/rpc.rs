@@ -10,7 +10,7 @@ use slog              :: { Logger                                         } ;
 use tokio::prelude    :: { Future                                         } ;
 
 use crate             :: { EkkeIoError, MessageType, ConnID } ;
-use crate           :: { IpcConnTrack, IpcMessage, ResultExtSlog,       } ;
+use crate           :: { ReceiveRequest, IpcMessage, ResultExtSlog,       } ;
 
 
 
@@ -20,7 +20,7 @@ pub struct Rpc
 {
 	  handlers: HashMap< TypeId, Box< dyn Any > >
 	, log     : Logger
-	, matcher : fn( IpcConnTrack, &Self )
+	, matcher : fn( &Self, IpcMessage, Recipient< IpcMessage > )
 }
 
 impl Actor for Rpc { type Context = Context<Self>; }
@@ -29,7 +29,7 @@ impl Actor for Rpc { type Context = Context<Self>; }
 
 impl Rpc
 {
-	pub fn new( log: Logger, matcher: fn( IpcConnTrack, &Self ) ) -> Self
+	pub fn new( log: Logger, matcher: fn( &Self, IpcMessage, Recipient< IpcMessage > ) ) -> Self
 	{
 		Self { handlers: HashMap::new(), log, matcher }
 	}
@@ -53,14 +53,14 @@ impl Rpc
 
 
 
-	pub fn deserialize<INTO>( &self, msg: IpcConnTrack )
+	pub fn deserialize<INTO>( &self, msg: IpcMessage, ipc_peer: Recipient< IpcMessage > )
 
 		where
 
 			INTO: DeserializeOwned + Message + Send + 'static,
 			INTO::Result: Send,
 	{
-		let name = msg.ipc_msg.service.clone();
+		let name = msg.service.clone();
 		let log  = self.log.clone();
 
 		// Get the service handler out of our hashmap
@@ -73,7 +73,7 @@ impl Rpc
 			{
 				// Deserialize the payload
 				//
-				let de: INTO = match des( &msg.ipc_msg.payload )
+				let de: INTO = match des( &msg.payload )
 				{
 					Ok ( data  ) => data,
 
@@ -83,8 +83,8 @@ impl Rpc
 						//
 						self.error_response
 						(
-							  format!( "Ekke Server could not deserialize your cbor data for service:{} :{:?}", &msg.ipc_msg.service, error )
-							, msg.ipc_peer
+							  format!( "Ekke Server could not deserialize your cbor data for service:{} :{:?}", &msg.service, error )
+							, ipc_peer
 						);
 
 						// If we can't deserialize the message, there's no point in continuing to handle this request.
@@ -113,7 +113,7 @@ impl Rpc
 
 						.then( move |r|
 						{
-							r.context( format!( "Rpc::Handler<IpcConnTrack> -> {}: mailbox error.", &name ) )
+							r.context( format!( "Rpc::Handler<ReceiveRequest> -> {}: mailbox error.", &name ) )
 							 .unwraps( &log );
 
 							Ok(())
@@ -127,7 +127,7 @@ impl Rpc
 			//
 			None => self.error_response
 
-				( format!( "Ekke Server received request for unknown service: {:?}", &msg.ipc_msg.service ), msg.ipc_peer )
+				( format!( "Ekke Server received request for unknown service: {:?}", &msg.service ), ipc_peer )
 		}
 	}
 }
@@ -136,7 +136,7 @@ impl Rpc
 
 /// Handle incoming IPC messages
 ///
-impl Handler<IpcConnTrack> for Rpc
+impl Handler<ReceiveRequest> for Rpc
 {
 	type Result = ();
 
@@ -144,11 +144,11 @@ impl Handler<IpcConnTrack> for Rpc
 	/// Handle incoming IPC messages
 	///
 	///
-	fn handle( &mut self, msg: IpcConnTrack, _ctx: &mut Context<Self> ) -> Self::Result
+	fn handle( &mut self, msg: ReceiveRequest, _ctx: &mut Context<Self> ) -> Self::Result
 	{
 		// Give user supplied callback the the data, so they can identify the type
 		//
-		(self.matcher)( msg, self );
+		(self.matcher)( self, msg.ipc_msg, msg.ipc_peer );
 	}
 }
 
