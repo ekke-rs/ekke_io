@@ -1,10 +1,12 @@
-use rand::Rng;
-use serde_derive  :: { Serialize, Deserialize }           ;
+use rand         :: { Rng                    };
+use serde_derive :: { Serialize, Deserialize };
 
+// u128 doesn't work in wasm and serde is being a pain, so 2 u64
+//
 /// Identifies a connection.
 /// The id field is deliberately private, so we can change the actual implementation later.
-/// u128 doesn't work in wasm and serde is being a pain, so 2 u64
-///
+/// Currently uses a 128bit random number.
+//
 #[ derive( Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize )]
 //
 pub struct ConnID

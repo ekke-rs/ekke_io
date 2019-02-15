@@ -2,6 +2,9 @@
 
 use slog::*;
 
+
+/// Scope based function entering and leaving logging
+///
 pub struct FnGuard
 {
 	function_name: &'static str,

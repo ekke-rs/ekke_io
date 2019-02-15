@@ -6,12 +6,18 @@ use slog::{ Logger, trace, debug, info, warn, error, crit, Level };
 // use failure::{ Fail };
 
 
-
+/// Add extras to the result type to ease logging of errors.
+///
 pub trait ResultExtSlog<T, E>
 
 	where E: Display + Debug
 {
+	/// Logs the error to the provided logger before unwrapping.
+	///
 	fn unwraps( self, log: &Logger                   ) -> T;
+
+	/// logs a potential error in the result and returns the result intact.
+	///
 	fn log    ( self, log: &Logger, lvl: slog::Level ) -> Result<T,E>;
 }
 

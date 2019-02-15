@@ -5,6 +5,8 @@ use slog::*;
 thread_local!( static TL_THREAD_ID: std::thread::ThreadId = std::thread::current().id() );
 
 
+/// A root drain to prefix a threadid to the log structure
+///
 #[derive(Clone)]
 //
 pub struct ThreadLocalDrain<D> where D: Drain

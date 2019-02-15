@@ -48,7 +48,7 @@ pub use ipc_message::
 	, ReceiveRequest
 	, SendRequest
 	, Response
-	, Error
+	, IpcError
 	, PleaseAck
 	, Ack
 	, Broadcast

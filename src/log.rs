@@ -1,3 +1,8 @@
+//! Provides a few convenience extras for logging.
+//! - FnGuard allow tracing entering and leaving functions
+//! - ThreadLocalDrain adds a thread id to the structured logging
+//! - ResultExtSlog allows to call unwraps( log: slog::Logger ) which will log the error before unwrapping.
+//!
 mod fn_guard           ;
 mod thread_local_drain ;
 mod result_ext_slog    ;
