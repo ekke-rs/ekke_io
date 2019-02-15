@@ -14,12 +14,21 @@ use tokio_async_await :: { await                                          } ;
 use futures_util      :: { future::FutureExt, try_future::TryFutureExt    } ;
 use futures           :: { channel::oneshot                               } ;
 
-use crate             :: { EkkeIoError, MessageType, ConnID } ;
-use crate             :: { ReceiveRequest, SendRequest, Response, IpcMessage, ResultExtSlog,       } ;
+use crate::
+{
+	  EkkeIoError
+	, MessageType
+	, ConnID
+	, ReceiveRequest
+	, SendRequest
+	, Response
+	, IpcMessage
+	, ResultExtSlog
+	, RegisterService
+};
 
 
-// mod response_future;
-// use response_future::ResponseFuture;
+pub(crate) mod register_service;
 
 
 // #[ derive( Debug ) ]
@@ -246,62 +255,6 @@ impl Handler<Response> for Rpc
 
 
 
-/*
-/// Handle outgoing RPC messages
-///
-impl Handler<SendRequest> for Rpc
-{
-	type Result = ActixFuture< Response >;
-
-
-	/// Handle outgoing RPC messages
-	///
-	///
-	fn handle( &mut self, mut msg: SendRequest, _ctx: &mut Context<Self> ) -> Self::Result
-	{
-		let conn_id = msg.ipc_msg.conn_id.clone();
-
-		self.responses.borrow_mut().insert( conn_id, Box::new( ResponseFuture::new() ) );
-
-		msg.ipc_msg.ms_type = MessageType::ReceiveRequest;
-		let _ = msg.ipc_peer.do_send( msg.ipc_msg );
-
-		let respf = self.responses.clone();
-
-		ActixFuture::from( async move
-		{
-			let mut borrow = respf.borrow_mut();
-			let f = borrow.get_mut( &conn_id ).unwrap();
-
-			let resp = await!( f );
-			let _ = borrow.remove( &conn_id ).unwrap();
-			resp
-		})
-	}
-}
-
-
-/// Handle outgoing RPC messages
-///
-impl Handler<Response> for Rpc
-{
-	type Result = ();
-
-
-	/// Handle outgoing RPC messages
-	///
-	///
-	fn handle( &mut self, msg: Response, _ctx: &mut Context<Self> ) -> Self::Result
-	{
-		let mut borrow = self.responses.borrow_mut();
-		let fut = borrow.get_mut( &msg.ipc_msg.conn_id ).unwrap();
-
-		fut.response( msg );
-	}
-}
-
-*/
-
 /// We need to keep a list of service->actor handler mappings at runtime. This is where services
 /// register.
 ///
@@ -335,17 +288,4 @@ where
 }
 
 
-
-#[ derive( Message ) ]
-//
-pub struct RegisterService<M>
-
-where
-	M: Message<Result = IpcMessage> + Send + 'static
-{
-	pub service  : String,
-	pub actor    : String,
-	pub type_id  : TypeId,
-	pub recipient: Recipient<M>
-}
 

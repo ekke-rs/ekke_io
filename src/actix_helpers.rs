@@ -1,4 +1,4 @@
-/// Macro for implementing MessageResponse for a strunct
+/// Macro for implementing actix::MessageResponse for a struct.
 /// Taken from actix src/handler.rs
 ///
 /// TODO: This would be nicer with a derive macro.

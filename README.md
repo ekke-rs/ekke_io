@@ -25,46 +25,19 @@ Input/Output library for the ekke framework
 Send a message to a peer without response.
 
 ### Request/Response
-Give a com interface an IpcPeer, an IpcMessage? and receive a future that will resolve to the response.
 
-What is the response type?
-What does it all mean for apps in other languages?
 
 # todo
 
 - ipc:
-  - dispatcher: maybe take new message types instead of IpcConntrack? Let IpcMessage have a `reply_to` field with an Option< Recipient<IpcMessage> > and a conn_id
-  - try to make dependency on slog and typename optional
+  - clean up and document after request/response implementation
   - ipcpeer and ipcmessage: codec as option so people aren't obliged to use cbor
-  - what does the double serialization cost us? Use Bytes for the outer one and CBOR for the inner one? or the other way around?
-  - dispatcher: replace hashmap with hashbrown
-  - only bind to one socket for all peer apps? peer authentication?
   - create modules that provide the streams to the client
+  - implement ack/publish/subscribe/broadcast
+  - Derive the service trait
+  - try to make dependency on slog and typename optional
+  - what does the double serialization cost us? Use Bytes for the outer one and CBOR for the inner one? or the other way around?
+  - rpc: replace hashmap with hashbrown
+  - only bind to one socket for all peer apps? peer authentication?
 
 
-# Event based dispatching
-
-Eventloop service actor
-
-
-## Request response flow
-
-Actor sends Request to Rpc
-Rpc takes Request -> future to RegisterApplicationResponse
-Rpc transforms Request to IpcMessage
-Rpc sends to peer
----
-IpcPeer receives IpcMessage
-send IpcMessage to Rpc
-Rpc sends RegisterApplication to Actor
-Actor makes RegisterApplicationResponse containing same conn_id
-Actor sends IpcMessage to peer
----
-Ipcpeer receives Response as IpcMessage
-Ipcpeer sends IpcMessage to Rpc
-Rpc matches conn_id to hashtable
-Rpc wakes up future
-
-# todo
-- Use new types instead of IpConnTrack
-- Create request functionality

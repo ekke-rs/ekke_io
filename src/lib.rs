@@ -22,7 +22,6 @@ mod errors;
 mod ipc_peer;
 mod ipc_message;
 mod log;
-mod service;
 
 pub use conn_id::
 {
@@ -67,12 +66,6 @@ pub use log::
 pub use rpc::
 {
 	  Rpc
-	, RegisterService
+	, register_service::RegisterService
+	, register_service::RegisterServiceMethod
 };
-
-
-pub use service::
-{
-	  Service
-};
-
