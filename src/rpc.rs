@@ -1,5 +1,11 @@
-use std::{ any::Any, any::TypeId, rc::Rc, cell::RefCell };
-use std               :: { collections::HashMap                           } ;
+use std::
+{
+	  any::Any
+	, any::TypeId
+	, rc::Rc
+	, cell::RefCell
+	, collections::HashMap
+};
 
 use actix             :: { prelude::*                                     } ;
 use actix_async_await :: { ResponseStdFuture as ActixFuture               } ;
@@ -16,29 +22,33 @@ use futures           :: { channel::oneshot                               } ;
 
 use crate::
 {
-	  EkkeIoError
-	, MessageType
-	, ConnID
-	, ReceiveRequest
-	, SendRequest
-	, Response
-	, IpcMessage
-	, ResultExtSlog
-	, RegisterService
+	  EkkeIoError     ,
+	  EkkeResult      ,
+	  MessageType     ,
+	  ConnID          ,
+	  ReceiveRequest  ,
+	  SendRequest     ,
+	  Response        ,
+	  IpcMessage      ,
+	  ResultExtSlog   ,
+	  RegisterService ,
 };
 
 
 pub(crate) mod register_service;
 
 
-// #[ derive( Debug ) ]
-//
+/// Rpc acts as an intermediary between your actors and IpcPeer. By registering your services with rpc, it will
+/// make sure that message of that type arrive at your actor. See RegisterService. It also takes care of matching
+/// a request to a response. When you send a SendRequest message to Rpc, you will get back a future that will
+/// resolve to the reponse from a remote application.
+///
 pub struct Rpc
 {
-	  handlers : HashMap< TypeId, Box< dyn Any > >,
-	  responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< Response > > >>
-	, log     : Logger
-	, matcher : fn( &Self, IpcMessage, Recipient< IpcMessage > )
+	handlers : HashMap< TypeId, Box< dyn Any > >                             ,
+	responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< Response > > >> ,
+	log      : Logger                                                        ,
+	matcher  : fn( &Self, IpcMessage, Recipient< IpcMessage > )              ,
 }
 
 impl Actor for Rpc { type Context = Context<Self>; }
@@ -47,6 +57,32 @@ impl Actor for Rpc { type Context = Context<Self>; }
 
 impl Rpc
 {
+	/// Create a new Rpc component.
+	///
+	/// The matcher parameter is a method that should take an IpcMessage, use the String ipc_msg.service
+	/// to Identify the type of the object and which should call back rpc to continue processing the
+	/// incoming message. The reason for this construction is that deserialize needs a static type to
+	/// deserialize into, but we only know the type at runtime. We want Rpc to be reusable accross several
+	/// applictions, which each will have their own list of services. I haven't found a more elegant way
+	/// to achieve this than with this callback.
+	///
+	///     use crate::services::*;
+	///     use ekke_io::{ IpcMessage, Rpc };
+	///     use actix::Recipient;
+	///
+	///     pub( crate ) fn service_map( rpc: &Rpc, msg: IpcMessage, ipc_peer: Recipient< IpcMessage > )
+	///     {
+	///         match msg.service.as_ref()
+	///         {
+	///             "RegisterApplication" => rpc.deser_into::<RegisterApplication>( msg, ipc_peer ),
+	///             _ =>(),
+	///         }
+	///     }
+	///
+	///     // when constructing an Rpc component, pass the callback as:
+	///     //
+	///     let rpc = Rpc::new( log.new( o!( "Actor" => "Rpc" ) ), crate::service_map ).start();
+	///
 	pub fn new( log: Logger, matcher: fn( &Self, IpcMessage, Recipient< IpcMessage > ) ) -> Self
 	{
 		Self { handlers: HashMap::new(), responses: Rc::new( RefCell::new( HashMap::new() )), log, matcher }
@@ -70,7 +106,12 @@ impl Rpc
 	}
 
 
-	pub fn deserialize2<INTO>( payload: Vec<u8> ) -> Result< INTO, failure::Error >
+	/// Deserialize a message if you know the resulting type. This does not handle the error if deserialization
+	/// fails, but rather returns you a Result.
+	///
+	/// TODO: Add Example
+	///
+	pub fn deserialize<INTO>( payload: Vec<u8> ) -> EkkeResult< INTO >
 
 	where INTO: DeserializeOwned
 
@@ -81,16 +122,6 @@ impl Rpc
 
 			Err( error ) =>
 			{
-				// If we can't deserialize, send an error message to the ipc peer application
-				//
-				// self.error_response
-				// (
-				// 	  format!( "Ekke Server could not deserialize your cbor data for service:{} :{:?}", service, error )
-				// 	, ipc_peer
-				// );
-
-				// If we can't deserialize the message, there's no point in continuing to handle this request.
-				//
 				return Err( error.into() );
 			}
 		};
@@ -100,7 +131,10 @@ impl Rpc
 
 
 
-	pub fn deserialize<INTO>( &self, msg: IpcMessage, ipc_peer: Recipient< IpcMessage > )
+	/// Part of processing incoming requests, this method needs to be called from the callback function
+	/// you pass to the constructor of this class. Look at the documentation on `new` for an example.
+	///
+	pub fn deser_into<INTO>( &self, msg: IpcMessage, ipc_peer: Recipient< IpcMessage > )
 
 		where
 
@@ -131,7 +165,7 @@ impl Rpc
 						//
 						self.error_response
 						(
-							  format!( "Ekke Server could not deserialize your cbor data for service:{} :{:?}", &msg.service, error )
+							  format!( "Rpc component could not deserialize your message for service:{} :{:?}", &msg.service, error )
 							, ipc_peer
 						);
 
@@ -183,19 +217,18 @@ impl Rpc
 
 
 
-/// Handle incoming IPC messages
+/// Handle incoming IPC requests
 ///
 impl Handler<ReceiveRequest> for Rpc
 {
 	type Result = ();
 
 
-	/// Handle incoming RPC messages
-	///
+	/// Handle incoming IPC requests
 	///
 	fn handle( &mut self, msg: ReceiveRequest, _ctx: &mut Context<Self> ) -> Self::Result
 	{
-		// Give user supplied callback the the data, so they can identify the type
+		// Give user supplied callback the the data, so they can identify the type for deserialization
 		//
 		(self.matcher)( self, msg.ipc_msg, msg.ipc_peer );
 	}
@@ -203,15 +236,14 @@ impl Handler<ReceiveRequest> for Rpc
 
 
 
-/// Handle outgoing RPC messages
+/// Handle outgoing RPC requests
 ///
 impl Handler<SendRequest> for Rpc
 {
 	type Result = ActixFuture< Response >;
 
 
-	/// Handle outgoing RPC messages
-	///
+	/// Handle outgoing RPC requests
 	///
 	fn handle( &mut self, mut msg: SendRequest, _ctx: &mut Context<Self> ) -> Self::Result
 	{
@@ -234,15 +266,14 @@ impl Handler<SendRequest> for Rpc
 
 
 
-/// Handle outgoing RPC messages
+/// Handle incoming Responses
 ///
 impl Handler<Response> for Rpc
 {
 	type Result = ();
 
 
-	/// Handle outgoing RPC messages
-	///
+	/// Handle incoming Responses
 	///
 	fn handle( &mut self, msg: Response, _ctx: &mut Context<Self> ) -> Self::Result
 	{
