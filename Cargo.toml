@@ -8,12 +8,13 @@
 
 [dependencies]
 
-	actix             = ">= 0.7.9"
+	actix             = "0.7.9"
 	actix-async-await = "0.2.0"
-	backtrace         = ">= 0.3.13"
-	failure           = ">= 0.1.5"
+	backtrace         = "0.3.13"
+	failure           = "0.1.5"
+	hashbrown         = { version = "0.1.8", features = ["nightly"] }
 	regex             = "1.1.0"
-	slog              = { version = "~2.4.1", features = ["max_level_trace", "release_max_level_warn"] }
+	slog              = { version = "2.4.1", features = ["max_level_trace", "release_max_level_warn"] }
 	typename          = "0.1.0"
 
 	serde             = "1.0.87"
@@ -23,10 +24,10 @@
 
 
 	tokio             = { version = "0.1.15", features = ["async-await-preview"] }
-	tokio-async-await = "~0.1.5"
+	tokio-async-await = "0.1.5"
 
-	tokio-uds        = "*"
-	tokio-serde-cbor = "0.3.1"
+	tokio-uds         = "0.2.5"
+	tokio-serde-cbor  = "0.3.1"
 
 	# Dependency on rand_core only because different versions in the dependency tree break compilation.
 	rand_core = "0.4"

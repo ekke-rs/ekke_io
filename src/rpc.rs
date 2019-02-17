@@ -4,12 +4,12 @@ use std::
 	, any::TypeId
 	, rc::Rc
 	, cell::RefCell
-	, collections::HashMap
 };
 
 use actix             :: { prelude::*                                     } ;
 use actix_async_await :: { ResponseStdFuture as ActixFuture               } ;
 use failure           :: { ResultExt                                      } ;
+use hashbrown         :: { HashMap                                        } ;
 use serde_cbor        :: { from_slice as des                              } ;
 use serde             :: { de::DeserializeOwned                           } ;
 
