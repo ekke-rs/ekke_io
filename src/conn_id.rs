@@ -1,5 +1,5 @@
-use rand         :: { Rng                    };
-use serde_derive :: { Serialize, Deserialize };
+use rand  :: { Rng                    };
+use serde :: { Serialize, Deserialize };
 
 // u128 doesn't work in wasm and serde is being a pain, so 2 u64
 //
@@ -27,4 +27,11 @@ impl ConnID
 
 		Self{ a, b }
 	}
+
+
+	pub fn hex( &self ) -> String
+	{
+		format!( "{:x}{:x}", self.a, self.b )
+	}
 }
+

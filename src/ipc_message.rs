@@ -9,11 +9,10 @@
 //! Your service actor must return a response from it's handler for the request.
 //
 
-use actix::prelude:: *                                    ;
+use actix::prelude:: { *                                } ;
 
-use serde         :: Serialize                            ;
-use serde_derive  :: { Serialize, Deserialize }           ;
-use serde_cbor    :: to_vec                               ;
+use serde         :: { Serialize, Deserialize           } ;
+use serde_cbor    :: { to_vec                           } ;
 
 use crate         :: { impl_message_response, ConnID    } ;
 
