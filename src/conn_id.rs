@@ -20,18 +20,27 @@ impl ConnID
 {
 	pub fn new() -> Self
 	{
-		let mut rng = rand::thread_rng();
-
-		let a = rng.gen::<u64>();
-		let b = rng.gen::<u64>();
-
-		Self{ a, b }
+		Self::default()
 	}
 
 
 	pub fn hex( &self ) -> String
 	{
 		format!( "{:x}{:x}", self.a, self.b )
+	}
+}
+
+
+impl Default for ConnID
+{
+	fn default() -> Self
+	{
+		let mut rng = rand::thread_rng();
+
+		let a = rng.gen::<u64>();
+		let b = rng.gen::<u64>();
+
+		Self{ a, b }
 	}
 }
 

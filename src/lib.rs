@@ -23,6 +23,7 @@ mod ipc_peer;
 mod ipc_message;
 mod log;
 
+
 pub use conn_id::
 {
 	  ConnID
@@ -69,3 +70,19 @@ pub use rpc::
 	, register_service::RegisterService
 	, register_service::RegisterServiceMethod
 };
+
+
+#[ cfg( feature = "http_server" ) ]
+//
+pub mod http_server;
+
+
+#[ cfg( feature = "http_server" ) ]
+//
+pub use http_server::
+{
+	HttpServer     ,
+	ResponseFuture ,
+	Responder      ,
+};
+

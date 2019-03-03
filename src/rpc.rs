@@ -13,7 +13,7 @@ use hashbrown         :: { HashMap                                        } ;
 use serde_cbor        :: { from_slice as des                              } ;
 use serde             :: { de::DeserializeOwned                           } ;
 
-use slog              :: { Logger                                         } ;
+use slog              :: { Logger, crit                                   } ;
 use tokio::prelude    :: { Future                                         } ;
 use tokio_async_await :: { await                                          } ;
 
@@ -304,11 +304,9 @@ where
 	{
 		if let Some( _service ) = self.handlers.remove( &msg.type_id )
 		{
-			let _:() =
+			crit!( self.log, "{}", EkkeIoError::DoubleServiceRegistration( format!( "{:?}", &msg.service ), msg.actor ) );
 
-				Err( EkkeIoError::DoubleServiceRegistration( format!( "{:?}", &msg.service ), msg.actor ) )
-
-					.unwraps( &self.log );
+			std::process::exit( 1 );
 		}
 
 		else
