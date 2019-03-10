@@ -73,7 +73,7 @@ pub use rpc::
 
 #[ cfg( feature = "http_server" ) ]
 //
-pub mod http_server;
+mod http_server;
 
 
 #[ cfg( feature = "http_server" ) ]
@@ -84,4 +84,6 @@ pub use http_server::
 	ResponseFuture ,
 	Responder      ,
 };
+
+
 

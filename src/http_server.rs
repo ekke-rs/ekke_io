@@ -1,5 +1,6 @@
 use
 {
+	actix:: { prelude::* },
 	hyper:: { Body, Request, Response, Server, service::service_fn },
 
 	futures::{ future::{ TryFutureExt } },
@@ -9,27 +10,33 @@ use
 	slog::{ Logger, info, error },
 
 	tokio::await,
+
+	crate:: { Rpc },
 };
 
-
 pub type ResponseFuture = Pin< Box< dyn Future< Output = Result< Response<Body>, hyper::Error > > + Send > >;
-pub type Responder      = Box< Fn( Request<Body> ) -> ResponseFuture + Send + Sync + 'static >;
+pub type Responder      = Box< Fn( Request<Body>, Addr<Rpc> ) -> ResponseFuture + Send + Sync + 'static >;
 
+
+#[ derive( Clone ) ]
+//
 pub struct HttpServer
 {
 	log    : Logger          ,
 	handler: Arc< Responder >,
+	rpc    : Addr<Rpc>       ,
 }
 
 
 impl HttpServer
 {
-	pub fn new( log: Logger, handler: Responder ) -> Self
+	pub fn new( log: Logger, handler: Responder, rpc: Addr<Rpc> ) -> Self
 	{
 		Self
 		{
 			log,
-			handler: Arc::new( handler )
+			rpc,
+			handler: Arc::new( handler ),
 		}
 	}
 
@@ -53,9 +60,10 @@ impl HttpServer
 			//
 			.serve( ||
 			{
-				let cb = self.handler.clone();
+				let cb  = self.handler.clone();
+				let rpc = self.rpc.clone();
 
-				service_fn( move |req| cb( req ).compat() )
+				service_fn( move |req| cb( req, rpc.clone() ).compat() )
 
 			});
 
