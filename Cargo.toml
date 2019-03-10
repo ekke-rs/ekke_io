@@ -22,6 +22,7 @@
 	hyper             = { version = "0.12.25", optional = true        }
 	regex             = "1.1.0"
 	slog              = { version = "2.4.1", features = [ "max_level_trace", "release_max_level_warn" ] }
+	slog_unwraps      = "0.1.5"
 	typename          = "0.1.0"
 
 	serde             = { version = "1.0.87", features = [ "derive" ] }

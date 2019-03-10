@@ -2,14 +2,16 @@ use std               :: { rc::Rc, cell::RefCell                       } ;
 
 use actix::prelude    :: { *                                           } ;
 use futures_util      :: { future::FutureExt, try_future::TryFutureExt } ;
+
 use slog              :: { Logger, error, info                         } ;
+use slog_unwraps      :: { ResultExt                                   } ;
 
 use tokio::prelude    :: { *, stream::{ SplitSink, SplitStream }       } ;
 use tokio::codec      :: { Decoder, Framed                             } ;
 use tokio_serde_cbor  :: { Codec                                       } ;
 use tokio_async_await :: { await                                       } ;
 
-use crate::{ IpcMessage, ReceiveRequest, Response, ResultExtSlog, MessageType, Rpc };
+use crate::{ IpcMessage, ReceiveRequest, Response, MessageType, Rpc };
 
 
 

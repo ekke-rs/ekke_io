@@ -8,12 +8,14 @@ use std::
 
 use actix             :: { prelude::*                                     } ;
 use actix_async_await :: { ResponseStdFuture as ActixFuture               } ;
-use failure           :: { ResultExt                                      } ;
+use failure           :: { ResultExt as _                                 } ;
 use hashbrown         :: { HashMap                                        } ;
 use serde_cbor        :: { from_slice as des                              } ;
 use serde             :: { de::DeserializeOwned                           } ;
 
 use slog              :: { Logger, crit                                   } ;
+use slog_unwraps      :: { ResultExt as _                                 } ;
+
 use tokio::prelude    :: { Future                                         } ;
 use tokio_async_await :: { await                                          } ;
 
@@ -30,7 +32,6 @@ use crate::
 	  SendRequest     ,
 	  Response        ,
 	  IpcMessage      ,
-	  ResultExtSlog   ,
 	  RegisterService ,
 };
 

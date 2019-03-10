@@ -17,13 +17,15 @@ use serde_cbor    :: { to_vec                           } ;
 use crate         :: { impl_message_response, ConnID    } ;
 
 
-
+// No longer compiles if the doc is above this derive
+//
+impl_message_response!( IpcMessage );
+//
 /// Represents a message that goes over the wire. It always contains a string service name
 /// to allow dispatching in the receiving application. A connection ID allows connection tracking.
 ///
 ///
-impl_message_response!( IpcMessage );
-//
+
 #[ derive( Debug, Serialize, Deserialize, Message )]
 //
 pub struct IpcMessage

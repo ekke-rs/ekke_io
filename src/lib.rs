@@ -60,7 +60,6 @@ pub use log::
 {
 	  ThreadLocalDrain
 	, FnGuard
-	, ResultExtSlog
 };
 
 
