@@ -30,7 +30,7 @@ use crate::
 	  ConnID          ,
 	  ReceiveRequest  ,
 	  SendRequest     ,
-	  Response        ,
+	  IpcResponse     ,
 	  IpcMessage      ,
 	  RegisterService ,
 };
@@ -47,7 +47,7 @@ pub(crate) mod register_service;
 pub struct Rpc
 {
 	handlers : HashMap< TypeId, Box< dyn Any > >                             ,
-	responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< Response > > >> ,
+	responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< IpcResponse > > >> ,
 	log      : Logger                                                        ,
 	matcher  : fn( &Self, IpcMessage, Recipient< IpcMessage > )              ,
 }
@@ -241,14 +241,14 @@ impl Handler<ReceiveRequest> for Rpc
 ///
 impl Handler<SendRequest> for Rpc
 {
-	type Result = ActixFuture< Response >;
+	type Result = ActixFuture< IpcResponse >;
 
 
 	/// Handle outgoing RPC requests
 	///
 	fn handle( &mut self, mut msg: SendRequest, _ctx: &mut Context<Self> ) -> Self::Result
 	{
-		let (sender, receiver) = oneshot::channel::<Response>();
+		let (sender, receiver) = oneshot::channel::< IpcResponse >();
 
 		self.responses.borrow_mut().insert( msg.ipc_msg.conn_id, sender );
 
@@ -269,14 +269,14 @@ impl Handler<SendRequest> for Rpc
 
 /// Handle incoming Responses
 ///
-impl Handler<Response> for Rpc
+impl Handler<IpcResponse> for Rpc
 {
 	type Result = ();
 
 
 	/// Handle incoming Responses
 	///
-	fn handle( &mut self, msg: Response, _ctx: &mut Context<Self> ) -> Self::Result
+	fn handle( &mut self, msg: IpcResponse, _ctx: &mut Context<Self> ) -> Self::Result
 	{
 		let mut borrow = self.responses.borrow_mut();
 		let channel = borrow.remove( &msg.ipc_msg.conn_id ).unwrap();

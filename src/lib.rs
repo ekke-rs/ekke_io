@@ -45,15 +45,15 @@ pub use ipc_peer::
 
 pub use ipc_message::
 {
-	  IpcMessage
-	, ReceiveRequest
-	, SendRequest
-	, Response
-	, IpcError
-	, PleaseAck
-	, Ack
-	, Broadcast
-	, MessageType
+	Ack            ,
+	Broadcast      ,
+	MessageType    ,
+	IpcMessage     ,
+	IpcError       ,
+	IpcResponse    ,
+	PleaseAck      ,
+	ReceiveRequest ,
+	SendRequest    ,
 };
 
 pub use log::

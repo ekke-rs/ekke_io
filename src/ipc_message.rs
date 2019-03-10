@@ -21,11 +21,11 @@ use crate         :: { impl_message_response, ConnID    } ;
 //
 impl_message_response!( IpcMessage );
 //
+
 /// Represents a message that goes over the wire. It always contains a string service name
 /// to allow dispatching in the receiving application. A connection ID allows connection tracking.
 ///
 ///
-
 #[ derive( Debug, Serialize, Deserialize, Message )]
 //
 pub struct IpcMessage
@@ -107,7 +107,7 @@ impl IpcMessage
 ///
 ///     )).unwraps( &log );
 ///
-#[ derive( Message ) ] #[ rtype( result="Response" ) ]
+#[ derive( Message ) ] #[ rtype( result="IpcResponse" ) ]
 //
 pub struct SendRequest{ pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 
@@ -124,7 +124,7 @@ pub struct SendRequest{ pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcM
 /// needs to be handled as a response to a request. It also allows the Rpc Actor to implement a specific handler
 /// for incoming requests. You shouldn't need to use this as a user of the framework.
 ///
-#[ derive( Message ) ] pub struct Response       { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct IpcResponse     { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 
 /// This is a wrapper type around IpcMessage to allow implementing handlers for a specific message type.
 /// Ipc message type indicating that an error happened before the message could be delivered to the actor handling

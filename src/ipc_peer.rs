@@ -11,9 +11,7 @@ use tokio::codec      :: { Decoder, Framed                             } ;
 use tokio_serde_cbor  :: { Codec                                       } ;
 use tokio_async_await :: { await                                       } ;
 
-use crate::{ IpcMessage, ReceiveRequest, Response, MessageType, Rpc };
-
-
+use crate::{ IpcMessage, ReceiveRequest, IpcResponse, MessageType, Rpc };
 
 /// Hides the underlying socket handling from client. The constructor takes a unix stream,
 /// but later will probably take any stream type. It also takes a Recipient<ReceiveRequest>
@@ -113,7 +111,7 @@ impl<S> IpcPeer<S>
 
 				MessageType::Response =>
 
-					await!( rpc.send( Response      { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
+					await!( rpc.send( IpcResponse      { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
 
 				_ =>
 				{
