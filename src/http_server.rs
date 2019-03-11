@@ -7,7 +7,7 @@ use
 
 	std:: { net::SocketAddr, future::Future, pin::Pin, sync::Arc },
 
-	slog::{ Logger, info, error },
+	slog::{ Logger, info, error, o },
 
 	tokio::await,
 
@@ -15,7 +15,7 @@ use
 };
 
 pub type ResponseFuture = Pin< Box< dyn Future< Output = Result< Response<Body>, hyper::Error > > + Send > >;
-pub type Responder      = Box< Fn( Request<Body>, Addr<Rpc> ) -> ResponseFuture + Send + Sync + 'static >;
+pub type Responder      = Box< Fn( Request<Body>, Addr<Rpc>, Logger ) -> ResponseFuture + Send + Sync + 'static >;
 
 
 #[ derive( Clone ) ]
@@ -62,8 +62,9 @@ impl HttpServer
 			{
 				let cb  = self.handler.clone();
 				let rpc = self.rpc.clone();
+				let log = self.log.new( o!( "fn" => "http_closure" ) );
 
-				service_fn( move |req| cb( req, rpc.clone() ).compat() )
+				service_fn( move |req| cb( req, rpc.clone(), log.clone() ).compat() )
 
 			});
 
