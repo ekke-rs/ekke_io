@@ -60,9 +60,9 @@ impl HttpServer
 			//
 			.serve( ||
 			{
-				let cb  = self.handler.clone();
-				let rpc = self.rpc.clone();
-				let log = self.log.new( o!( "fn" => "http_closure" ) );
+				let cb  = self.handler.clone()                             ;
+				let rpc = self.rpc    .clone()                             ;
+				let log = self.log    .new( o!( "fn" => "http_closure" ) ) ;
 
 				service_fn( move |req| cb( req, rpc.clone(), log.clone() ).compat() )
 
