@@ -14,7 +14,7 @@ use actix::prelude:: { *                                } ;
 use serde         :: { Serialize, Deserialize           } ;
 use serde_cbor    :: { to_vec                           } ;
 
-use crate         :: { impl_message_response, ConnID    } ;
+use crate         :: { impl_message_response, ConnID, EkkeIoError } ;
 
 
 // No longer compiles if the doc is above this derive
@@ -107,7 +107,7 @@ impl IpcMessage
 ///
 ///     )).unwraps( &log );
 ///
-#[ derive( Message ) ] #[ rtype( result="IpcResponse" ) ]
+#[ derive( Message ) ] #[ rtype( result="Result<IpcResponse, EkkeIoError>" ) ]
 //
 pub struct SendRequest{ pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 

@@ -13,7 +13,7 @@ use hashbrown         :: { HashMap                                        } ;
 use serde_cbor        :: { from_slice as des                              } ;
 use serde             :: { de::DeserializeOwned                           } ;
 
-use slog              :: { Logger, crit                                   } ;
+use slog              :: { Logger, crit, debug, o                         } ;
 use slog_unwraps      :: { ResultExt as _                                 } ;
 
 use tokio::prelude    :: { Future                                         } ;
@@ -31,6 +31,7 @@ use crate::
 	  ReceiveRequest  ,
 	  SendRequest     ,
 	  IpcResponse     ,
+	  IpcError        ,
 	  IpcMessage      ,
 	  RegisterService ,
 };
@@ -47,9 +48,9 @@ pub(crate) mod register_service;
 pub struct Rpc
 {
 	handlers : HashMap< TypeId, Box< dyn Any > >                             ,
-	responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< IpcResponse > > >> ,
+	responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< Result<IpcResponse, EkkeIoError> > > >> ,
 	log      : Logger                                                        ,
-	matcher  : fn( &Self, IpcMessage, Recipient< IpcMessage > )              ,
+	matcher  : fn( &Self, Logger, IpcMessage, Recipient< IpcMessage > )              ,
 }
 
 impl Actor for Rpc { type Context = Context<Self>; }
@@ -84,7 +85,7 @@ impl Rpc
 	///     //
 	///     let rpc = Rpc::new( log.new( o!( "Actor" => "Rpc" ) ), crate::service_map ).start();
 	///
-	pub fn new( log: Logger, matcher: fn( &Self, IpcMessage, Recipient< IpcMessage > ) ) -> Self
+	pub fn new( log: Logger, matcher: fn( &Self, Logger, IpcMessage, Recipient< IpcMessage > ) ) -> Self
 	{
 		Self { handlers: HashMap::new(), responses: Rc::new( RefCell::new( HashMap::new() )), log, matcher }
 	}
@@ -92,14 +93,14 @@ impl Rpc
 
 	/// Send an error message back to the peer application over the ipc channel.
 	///
-	fn error_response( &self, error: String, addr: Recipient< IpcMessage > )
+	pub fn error_response( &self, service: String, error: String, addr: Recipient< IpcMessage >, conn_id: ConnID )
 	{
 		let log = self.log.clone();
 
 		Arbiter::spawn
 		(
 
-			addr.send( IpcMessage::new( "EkkeServerError".into(), error, MessageType::Error, ConnID::new() ) )
+			addr.send( IpcMessage::new( service, error, MessageType::Error, conn_id ) )
 
 				.then( move |r| { r.context( "Rpc::error_response -> IpcPeer: mailbox error." ).unwraps( &log ); Ok(())} )
 
@@ -166,8 +167,10 @@ impl Rpc
 						//
 						self.error_response
 						(
-							  format!( "Rpc component could not deserialize your message for service:{} :{:?}", &msg.service, error )
+							  msg.service.clone()
+							, format!( "Rpc component could not deserialize your message for service:{} :{:?}", &msg.service, error )
 							, ipc_peer
+							, msg.conn_id
 						);
 
 						// If we can't deserialize the message, there's no point in continuing to handle this request.
@@ -211,7 +214,7 @@ impl Rpc
 			//
 			None => self.error_response
 
-				( format!( "Ekke Server received request for unknown service: {:?}", &msg.service ), ipc_peer )
+				( msg.service.clone(), format!( "No handler is registered for service: {:?}", &msg.service ), ipc_peer, msg.conn_id )
 		}
 	}
 }
@@ -229,9 +232,11 @@ impl Handler<ReceiveRequest> for Rpc
 	///
 	fn handle( &mut self, msg: ReceiveRequest, _ctx: &mut Context<Self> ) -> Self::Result
 	{
+		debug!( &self.log, "Received incoming request: {}", &msg.ipc_msg.service );
+
 		// Give user supplied callback the the data, so they can identify the type for deserialization
 		//
-		(self.matcher)( self, msg.ipc_msg, msg.ipc_peer );
+		(self.matcher)( self, self.log.new( o!( "fn" => "service_map" ) ), msg.ipc_msg, msg.ipc_peer );
 	}
 }
 
@@ -241,14 +246,14 @@ impl Handler<ReceiveRequest> for Rpc
 ///
 impl Handler<SendRequest> for Rpc
 {
-	type Result = ActixFuture< IpcResponse >;
+	type Result = ActixFuture< Result<IpcResponse, EkkeIoError> >;
 
 
 	/// Handle outgoing RPC requests
 	///
 	fn handle( &mut self, mut msg: SendRequest, _ctx: &mut Context<Self> ) -> Self::Result
 	{
-		let (sender, receiver) = oneshot::channel::< IpcResponse >();
+		let (sender, receiver) = oneshot::channel::< Result<IpcResponse, EkkeIoError> >();
 
 		self.responses.borrow_mut().insert( msg.ipc_msg.conn_id, sender );
 
@@ -273,15 +278,33 @@ impl Handler<IpcResponse> for Rpc
 {
 	type Result = ();
 
-
 	/// Handle incoming Responses
 	///
 	fn handle( &mut self, msg: IpcResponse, _ctx: &mut Context<Self> ) -> Self::Result
 	{
-		let mut borrow = self.responses.borrow_mut();
-		let channel = borrow.remove( &msg.ipc_msg.conn_id ).unwrap();
+		let mut borrow  = self.responses.borrow_mut();
+		let     channel = borrow.remove( &msg.ipc_msg.conn_id ).unwrap();
 
-		let _ = channel.send( msg );
+		let     _       = channel.send( Ok( msg ) );
+	}
+}
+
+
+
+/// Handle incoming Errors
+///
+impl Handler<IpcError> for Rpc
+{
+	type Result = ();
+
+	/// Handle incoming Errors
+	///
+	fn handle( &mut self, msg: IpcError, _ctx: &mut Context<Self> ) -> Self::Result
+	{
+		let mut borrow  = self.responses.borrow_mut();
+		let     channel = borrow.remove( &msg.ipc_msg.conn_id ).unwrap();
+
+		let     _       = channel.send( Err( msg.into() ) );
 	}
 }
 

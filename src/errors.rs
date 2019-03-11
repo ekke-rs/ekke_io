@@ -1,5 +1,8 @@
-use failure:: { Error, Fail  } ;
-use actix  :: { MailboxError } ;
+use failure:: { Error, Fail   } ;
+use actix  :: { MailboxError  } ;
+use crate  :: { IpcError      } ;
+use std    :: { convert::From } ;
+use serde_cbor::{ from_slice as des } ;
 
 
 /// Custom result type, Allows to omit error type since it's always
@@ -41,4 +44,23 @@ pub enum EkkeIoError
 	#[ fail( display = "Rpc: Handler for service [{}] is already registered. Second attempt was by: [{}].", _0, _1 ) ]
 	//
 	DoubleServiceRegistration( String, String ),
+
+	#[ fail( display = "Rpc: Peer failed to handle request: [{}].", _0 ) ]
+	//
+	IpcError( String ),
+}
+
+
+impl From< IpcError > for EkkeIoError
+{
+	fn from( err: IpcError ) -> Self
+	{
+		let de: String = match des( &err.ipc_msg.payload )
+		{
+			Ok ( msg ) => msg                                        ,
+			Err( _   ) => "Failed to deserialize Error Message".into(),
+		};
+
+		EkkeIoError::IpcError( de )
+	}
 }

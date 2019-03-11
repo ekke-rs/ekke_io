@@ -11,7 +11,7 @@ use tokio::codec      :: { Decoder, Framed                             } ;
 use tokio_serde_cbor  :: { Codec                                       } ;
 use tokio_async_await :: { await                                       } ;
 
-use crate::{ IpcMessage, ReceiveRequest, IpcResponse, MessageType, Rpc };
+use crate::{ MessageType, IpcMessage, ReceiveRequest, IpcResponse, IpcError, Rpc };
 
 /// Hides the underlying socket handling from client. The constructor takes a unix stream,
 /// but later will probably take any stream type. It also takes a Recipient<ReceiveRequest>
@@ -111,12 +111,21 @@ impl<S> IpcPeer<S>
 
 				MessageType::Response =>
 
-					await!( rpc.send( IpcResponse      { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
+					await!( rpc.send( IpcResponse   { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
+
+				MessageType::Error =>
+
+					await!( rpc.send( IpcError      { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
 
 				_ =>
 				{
 					error!( log_loop, "Unimplemented message type: {:?}", frame.ms_type );
-					unreachable!()
+
+					// If in debug mode, we crash here. In release just move on.
+					//
+					#[ cfg( debug_assertions ) ]
+					//
+					unimplemented!();
 				}
 
 			};	Ok(()) }.boxed().compat());
