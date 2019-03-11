@@ -1,20 +1,9 @@
-use
-{
-	actix:: { prelude::* },
-	hyper:: { Body, Request, Response, Server, service::service_fn },
+use crate :: { import::*, Rpc };
 
-	futures::{ future::{ TryFutureExt } },
+use hyper:: { Body, Request, Response, Server, service::service_fn };
 
-	std:: { net::SocketAddr, future::Future, pin::Pin, sync::Arc },
 
-	slog::{ Logger, info, error, o },
-
-	tokio::await,
-
-	crate:: { Rpc },
-};
-
-pub type ResponseFuture = Pin< Box< dyn Future< Output = Result< Response<Body>, hyper::Error > > + Send > >;
+pub type ResponseFuture = Pin< Box< dyn StdFuture< Output = Result< Response<Body>, hyper::Error > > + Send > >;
 pub type Responder      = Box< Fn( Request<Body>, Addr<Rpc>, Logger ) -> ResponseFuture + Send + Sync + 'static >;
 
 
@@ -71,7 +60,7 @@ impl HttpServer
 		// Wait for the server to complete serving or exit with an error.
 		// If an error occurred, print it to stderr.
 		//
-		if let Err(e) = await!( serve_future )
+		if let Err(e) = awaits!( serve_future )
 		{
 			error!( self.log, "server error: {}", e );
 		}

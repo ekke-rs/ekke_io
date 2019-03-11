@@ -1,15 +1,4 @@
-use std               :: { rc::Rc, cell::RefCell                       } ;
-
-use actix::prelude    :: { *                                           } ;
-use futures_util      :: { future::FutureExt, try_future::TryFutureExt } ;
-
-use slog              :: { Logger, error, info                         } ;
-use slog_unwraps      :: { ResultExt                                   } ;
-
-use tokio::prelude    :: { *, stream::{ SplitSink, SplitStream }       } ;
-use tokio::codec      :: { Decoder, Framed                             } ;
-use tokio_serde_cbor  :: { Codec                                       } ;
-use tokio_async_await :: { await                                       } ;
+use crate :: { import::* };
 
 use crate::{ MessageType, IpcMessage, IpcRequestIn, IpcResponse, IpcError, Rpc };
 
@@ -107,15 +96,15 @@ impl<S> IpcPeer<S>
 			{
 				MessageType::IpcRequestIn =>
 
-					await!( rpc.send( IpcRequestIn{ ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
+					awaits!( rpc.send( IpcRequestIn{ ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
 
 				MessageType::Response =>
 
-					await!( rpc.send( IpcResponse   { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
+					awaits!( rpc.send( IpcResponse   { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
 
 				MessageType::Error =>
 
-					await!( rpc.send( IpcError      { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
+					awaits!( rpc.send( IpcError      { ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
 
 				_ =>
 				{
@@ -151,7 +140,7 @@ impl<S> Handler< IpcMessage > for IpcPeer<S>
 		{
 			let mut stay_alive = sink.borrow_mut();
 
-			match await!( stay_alive.send_async( msg ) )
+			match awaits!( stay_alive.send_async( msg ) )
 			{
 				Ok (_) => { info! ( log, "Ekke: successfully wrote to stream"       ); },
 				Err(e) => { error!( log, "Ekke: failed to write to stream: {:?}", e ); }

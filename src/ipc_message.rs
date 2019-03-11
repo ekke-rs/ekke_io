@@ -9,12 +9,7 @@
 //! Your service actor must return a response from it's handler for the request.
 //
 
-use actix::prelude:: { *                                } ;
-
-use serde         :: { Serialize, Deserialize           } ;
-use serde_cbor    :: { to_vec                           } ;
-
-use crate         :: { impl_message_response, ConnID, EkkeIoError } ;
+use crate :: { import::*, impl_message_response, ConnID, EkkeIoError } ;
 
 
 // No longer compiles if the doc is above this derive
@@ -75,7 +70,7 @@ impl IpcMessage
 			  service
 			, ms_type
 			, conn_id
-			, payload: to_vec( &payload ).unwrap()
+			, payload: serde_cbor::to_vec( &payload ).unwrap()
 		}
 	}
 }

@@ -1,26 +1,5 @@
-use std::
-{
-	  any::Any
-	, any::TypeId
-	, rc::Rc
-	, cell::RefCell
-};
+use crate :: { import::* };
 
-use actix             :: { prelude::*                                     } ;
-use actix_async_await :: { ResponseStdFuture as ActixFuture               } ;
-use failure           :: { ResultExt as _                                 } ;
-use hashbrown         :: { HashMap                                        } ;
-use serde_cbor        :: { from_slice as des                              } ;
-use serde             :: { de::DeserializeOwned                           } ;
-
-use slog              :: { Logger, crit, debug, o                         } ;
-use slog_unwraps      :: { ResultExt as _                                 } ;
-
-use tokio::prelude    :: { Future                                         } ;
-use tokio_async_await :: { await                                          } ;
-
-use futures_util      :: { future::FutureExt, try_future::TryFutureExt    } ;
-use futures           :: { channel::oneshot                               } ;
 
 use crate::
 {
@@ -48,7 +27,7 @@ pub(crate) mod register_service;
 pub struct Rpc
 {
 	handlers : HashMap< TypeId, Box< dyn Any > >                             ,
-	responses: Rc<RefCell< HashMap< ConnID, oneshot::Sender< Result<IpcResponse, EkkeIoError> > > >> ,
+	responses: Rc<RefCell< HashMap< ConnID, channel::oneshot::Sender< Result<IpcResponse, EkkeIoError> > > >> ,
 	log      : Logger                                                        ,
 	matcher  : fn( &Self, Logger, IpcMessage, Recipient< IpcMessage > )              ,
 }
@@ -195,12 +174,12 @@ impl Rpc
 
 				Arbiter::spawn( async move
 				{
-					let try_resp = await!( addr.send( de ) );
+					let try_resp = awaits!( addr.send( de ) );
 
 					let resp = try_resp.context( format!( "Rpc::Handler<IpcRequestIn> -> {}: mailbox error.", &name ) )
 					    .unwraps( &log );
 
-					await!( ipc_peer.send( resp ) ).unwraps( &log );
+					awaits!( ipc_peer.send( resp ) ).unwraps( &log );
 
 
 					Ok(())
@@ -253,7 +232,7 @@ impl Handler<IpcRequestOut> for Rpc
 	///
 	fn handle( &mut self, mut msg: IpcRequestOut, _ctx: &mut Context<Self> ) -> Self::Result
 	{
-		let (sender, receiver) = oneshot::channel::< Result<IpcResponse, EkkeIoError> >();
+		let (sender, receiver) = channel::oneshot::channel::< Result<IpcResponse, EkkeIoError> >();
 
 		self.responses.borrow_mut().insert( msg.ipc_msg.conn_id, sender );
 

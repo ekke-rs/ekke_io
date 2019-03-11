@@ -1,5 +1,5 @@
-use rand  :: { Rng                    };
-use serde :: { Serialize, Deserialize };
+use crate :: { import::* };
+
 
 // u128 doesn't work in wasm and serde is being a pain, so 2 u64
 //

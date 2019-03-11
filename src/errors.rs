@@ -1,8 +1,5 @@
-use failure:: { Error, Fail   } ;
-use actix  :: { MailboxError  } ;
-use crate  :: { IpcError      } ;
-use std    :: { convert::From } ;
-use serde_cbor::{ from_slice as des } ;
+use crate :: { import::*, IpcError };
+
 
 
 /// Custom result type, Allows to omit error type since it's always

@@ -87,3 +87,43 @@ pub use http_server::
 
 
 
+mod import
+{
+	#[ allow( unused_imports ) ]
+	//
+	pub( crate ) use
+	{
+
+		actix             :: { Actor, Addr, Arbiter, AsyncContext, Context, Handler, MailboxError,
+			                        Message, Recipient, Supervised, SystemService, dev::ToEnvelope           },
+		actix_async_await :: { ResponseStdFuture as ActixFuture                                             },
+
+		failure           :: { Fail, Error, ResultExt as _                                                  },
+
+		futures           :: { channel, future::{ join_all, ok }                                            },
+		futures_util      :: { future::{ FutureExt }, try_future::TryFutureExt                              },
+
+		hashbrown         :: { HashMap                                                                      },
+		rand              :: { Rng                                                                          },
+
+		serde             :: { Serialize, Deserialize, de::DeserializeOwned                                 },
+		serde_cbor        :: { from_slice as des                                                            },
+
+		slog              :: { Drain, Logger, trace, debug, info, warn, error, crit, o                      },
+		slog_unwraps      :: { ResultExt                                                                    },
+
+		std               :: { any::{ Any, TypeId }, cell::RefCell, convert::From, convert::TryFrom,
+		                       env, fmt, future::Future as StdFuture, net::SocketAddr, path::PathBuf,
+		                       process::Command, rc::Rc, sync::Arc, pin::Pin                                },
+
+		// tokio::prelude::Future allows to use .then, but I imagine there is a better way...
+		//
+		tokio             :: { codec::{ Framed, Decoder }, io::{AsyncRead, AsyncWrite}, net::UnixStream,
+		                       net::UnixListener                                                            },
+		tokio::prelude    :: { Future as _, stream::{ SplitSink, SplitStream, Stream } },
+		tokio_async_await :: { await as awaits, stream::StreamExt, sink::SinkExt                            },
+		tokio_serde_cbor  :: { Codec                                                                        },
+
+		typename          :: { TypeName                                                                     },
+	};
+}
