@@ -28,8 +28,8 @@ use crate::
 	  EkkeResult      ,
 	  MessageType     ,
 	  ConnID          ,
-	  ReceiveRequest  ,
-	  SendRequest     ,
+	  IpcRequestIn  ,
+	  IpcRequestOut     ,
 	  IpcResponse     ,
 	  IpcError        ,
 	  IpcMessage      ,
@@ -42,7 +42,7 @@ pub(crate) mod register_service;
 
 /// Rpc acts as an intermediary between your actors and IpcPeer. By registering your services with rpc, it will
 /// make sure that message of that type arrive at your actor. See RegisterService. It also takes care of matching
-/// a request to a response. When you send a SendRequest message to Rpc, you will get back a future that will
+/// a request to a response. When you send a IpcRequestOut message to Rpc, you will get back a future that will
 /// resolve to the reponse from a remote application.
 ///
 pub struct Rpc
@@ -197,7 +197,7 @@ impl Rpc
 				{
 					let try_resp = await!( addr.send( de ) );
 
-					let resp = try_resp.context( format!( "Rpc::Handler<ReceiveRequest> -> {}: mailbox error.", &name ) )
+					let resp = try_resp.context( format!( "Rpc::Handler<IpcRequestIn> -> {}: mailbox error.", &name ) )
 					    .unwraps( &log );
 
 					await!( ipc_peer.send( resp ) ).unwraps( &log );
@@ -223,14 +223,14 @@ impl Rpc
 
 /// Handle incoming IPC requests
 ///
-impl Handler<ReceiveRequest> for Rpc
+impl Handler<IpcRequestIn> for Rpc
 {
 	type Result = ();
 
 
 	/// Handle incoming IPC requests
 	///
-	fn handle( &mut self, msg: ReceiveRequest, _ctx: &mut Context<Self> ) -> Self::Result
+	fn handle( &mut self, msg: IpcRequestIn, _ctx: &mut Context<Self> ) -> Self::Result
 	{
 		debug!( &self.log, "Received incoming request: {}", &msg.ipc_msg.service );
 
@@ -244,20 +244,20 @@ impl Handler<ReceiveRequest> for Rpc
 
 /// Handle outgoing RPC requests
 ///
-impl Handler<SendRequest> for Rpc
+impl Handler<IpcRequestOut> for Rpc
 {
 	type Result = ActixFuture< Result<IpcResponse, EkkeIoError> >;
 
 
 	/// Handle outgoing RPC requests
 	///
-	fn handle( &mut self, mut msg: SendRequest, _ctx: &mut Context<Self> ) -> Self::Result
+	fn handle( &mut self, mut msg: IpcRequestOut, _ctx: &mut Context<Self> ) -> Self::Result
 	{
 		let (sender, receiver) = oneshot::channel::< Result<IpcResponse, EkkeIoError> >();
 
 		self.responses.borrow_mut().insert( msg.ipc_msg.conn_id, sender );
 
-		msg.ipc_msg.ms_type = MessageType::ReceiveRequest;
+		msg.ipc_msg.ms_type = MessageType::IpcRequestIn;
 		let _ = msg.ipc_peer.do_send( msg.ipc_msg );
 
 

@@ -11,10 +11,10 @@ use tokio::codec      :: { Decoder, Framed                             } ;
 use tokio_serde_cbor  :: { Codec                                       } ;
 use tokio_async_await :: { await                                       } ;
 
-use crate::{ MessageType, IpcMessage, ReceiveRequest, IpcResponse, IpcError, Rpc };
+use crate::{ MessageType, IpcMessage, IpcRequestIn, IpcResponse, IpcError, Rpc };
 
 /// Hides the underlying socket handling from client. The constructor takes a unix stream,
-/// but later will probably take any stream type. It also takes a Recipient<ReceiveRequest>
+/// but later will probably take any stream type. It also takes a Recipient<IpcRequestIn>
 /// to forward incoming messages to and it needs it's own address for setting up listening,
 /// so you should create this with `Actor::create` and `IpcPeer::new`.
 /// Will forward any IpcMessage you send to it on the network stream serialized as cbor,
@@ -105,9 +105,9 @@ impl<S> IpcPeer<S>
 
 			Arbiter::spawn( async move	{ match frame.ms_type
 			{
-				MessageType::ReceiveRequest =>
+				MessageType::IpcRequestIn =>
 
-					await!( rpc.send( ReceiveRequest{ ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
+					await!( rpc.send( IpcRequestIn{ ipc_msg: frame, ipc_peer: peer } ) ).unwraps( &log_loop ),
 
 				MessageType::Response =>
 

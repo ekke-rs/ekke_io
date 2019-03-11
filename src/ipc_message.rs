@@ -3,7 +3,7 @@
 //! Ack, Broadcast, Publisher/Subscriber. See the respective Message types in this module
 //! for more information.
 //!
-//! IpcPeer will send a ReceiveRequest to your Rpc for incoming requests. Usually the
+//! IpcPeer will send a IpcRequestIn to your Rpc for incoming requests. Usually the
 //! dispatcher will hold on to the IpcPeer address and deserialize the IpcMessage payload
 //! so your service can receive it's uniquely typed message.
 //! Your service actor must return a response from it's handler for the request.
@@ -92,7 +92,7 @@ impl IpcMessage
 ///
 ///     let response = await!( rpc.send
 ///     (
-///     	SendRequest
+///     	IpcRequestOut
 ///     	{
 ///     		ipc_peer: ekke_server.recipient(),
 ///
@@ -100,7 +100,7 @@ impl IpcMessage
 ///     		(
 ///     			  "RegisterApplication".to_string()
 ///     			, RegisterApplication { conn_id, app_name: "Systemd".to_string() }
-///     			, MessageType::SendRequest
+///     			, MessageType::IpcRequestOut
 ///     			, conn_id
 ///     		)
 ///     	}
@@ -109,7 +109,7 @@ impl IpcMessage
 ///
 #[ derive( Message ) ] #[ rtype( result="Result<IpcResponse, EkkeIoError>" ) ]
 //
-pub struct SendRequest{ pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+pub struct IpcRequestOut{ pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 
 
 /// This is a wrapper type around IpcMessage to allow implementing handlers for a specific message type.
@@ -117,7 +117,7 @@ pub struct SendRequest{ pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcM
 /// needs to be handled as a request. It also allows the Rpc Actor to implement a specific handler
 /// for incoming requests. You shouldn't need to use this as a user of the framework.
 ///
-#[ derive( Message ) ] pub struct ReceiveRequest { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
+#[ derive( Message ) ] pub struct IpcRequestIn { pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcMessage }
 
 /// This is a wrapper type around IpcMessage to allow implementing handlers for a specific message type.
 /// Rpc will create this message type automatically to indicate the peer application that this
@@ -158,8 +158,8 @@ pub struct SendRequest{ pub ipc_peer: Recipient< IpcMessage >, pub ipc_msg: IpcM
 //
 pub enum MessageType
 {
-	SendRequest   ,
-	ReceiveRequest,
+	IpcRequestOut   ,
+	IpcRequestIn,
 	Response      ,
 	PleaseAck     ,
 	Ack           ,
