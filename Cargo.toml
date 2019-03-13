@@ -1,47 +1,59 @@
-[package]
+# Auto-generated from "Cargo.yml"
+[dependencies]
+failure = "0.1.5"
+parking_lot = "0.7.1"
+rand = "0.6.5"
+serde_bytes = "0.10.4"
+serde_cbor = "0.9.0"
+slog_unwraps = "0.1.5"
+tokio-async-await = "0.1.5"
+tokio-serde-cbor = "0.3.1"
+typename = "0.1.0"
 
-	name    = "ekke_io"
-	version = "0.1.0"
-	authors = [ "Naja Melan <najamelan@autistici.org>" ]
-	edition = "2018"
+[dependencies.actix]
+path = "../../actix"
 
+[dependencies.actix-async-await]
+path = "../../actix-async-await"
+
+[dependencies.futures-preview]
+default-features = false
+features = ["compat"]
+version = "0.3.0-alpha.13"
+
+[dependencies.futures-util-preview]
+default-features = false
+features = ["compat"]
+version = "0.3.0-alpha.13"
+
+[dependencies.hashbrown]
+features = ["nightly"]
+version = "0.1.8"
+
+[dependencies.hyper]
+optional = true
+version = "0.12.25"
+
+[dependencies.serde]
+features = ["derive"]
+version = "1.0.87"
+
+[dependencies.slog]
+features = ["max_level_trace", "release_max_level_warn"]
+version = "2.4.1"
+
+[dependencies.tokio]
+default-features = false
+features = ["async-await-preview"]
+version = "0.1.15"
 
 [features]
+http_server = ["hyper"]
+tokio-rt = ["actix/tokio"]
+wasm-rt = ["actix/wasm"]
 
-	"http_server" = [ "hyper" ]
-
-
-
-[dependencies]
-
-	actix             = "0.7.9"
-	actix-async-await = { path = "../../actix-async-await" }
-
-	backtrace         = "0.3.13"
-	failure           = "0.1.5"
-	hashbrown         = { version = "0.1.8"  , features = ["nightly"] }
-	hyper             = { version = "0.12.25", optional = true        }
-	parking_lot       = "0.7.1"
-	regex             = "1.1.0"
-
-	slog              = { version = "2.4.1", features = [ "max_level_trace", "release_max_level_warn" ] }
-	slog_unwraps      = "0.1.5"
-
-	serde             = { version = "1.0.87", features = [ "derive" ] }
-	serde_bytes       = "0.10.4"
-	serde_cbor        = "0.9.0"
-
-	tokio             = { version = "0.1.15", features = [ "async-await-preview" ] }
-	tokio-async-await = "0.1.5"
-	tokio-file-unix   = "0.5.1"
-	tokio-uds         = "0.2.5"
-	tokio-serde-cbor  = "0.3.1"
-
-	# Dependency on rand_core only because different versions in the dependency tree break compilation.
-	rand_core = "0.4"
-	rand      = "0.6.5"
-
-	futures-preview      = { version = "0.3.0-alpha.13", features = [ "compat" ] }
-	futures-util-preview = { version = "0.3.0-alpha.13", features = [ "compat" ] }
-
-	typename          = "0.1.0"
+[package]
+authors = ["Naja Melan <najamelan@autistici.org>"]
+edition = "2018"
+name = "ekke_io"
+version = "0.1.0"

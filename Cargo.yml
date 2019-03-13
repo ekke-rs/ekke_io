@@ -1,0 +1,48 @@
+package:
+
+  name   : ekke_io
+  version: 0.1.0
+  authors: [ Naja Melan <najamelan@autistici.org> ]
+  edition: '2018'
+
+
+features:
+
+  http_server : [ hyper       ]
+  tokio-rt    : [ actix/tokio ]
+  wasm-rt     : [ actix/wasm  ]
+
+
+dependencies:
+
+  actix               : { path: ../../actix             }
+  actix-async-await   : { path: ../../actix-async-await }
+
+  futures-preview     : { version: 0.3.0-alpha.13, features: [ compat ], default-features: false }
+  futures-util-preview: { version: 0.3.0-alpha.13, features: [ compat ], default-features: false }
+
+  failure             : 0.1.5
+  hashbrown           : { version: 0.1.8, features: [nightly] }
+  parking_lot         : 0.7.1
+
+  slog                : { version: 2.4.1, features: [ max_level_trace, release_max_level_warn ] }
+  slog_unwraps        : 0.1.5
+
+  serde               : { version: 1.0.87, features: [ derive ] }
+  serde_bytes         : 0.10.4
+  serde_cbor          : 0.9.0
+
+  tokio               : { version: 0.1.15, features: [ async-await-preview ] }
+  tokio-async-await   : 0.1.5
+  tokio-serde-cbor    : 0.3.1
+
+  # Dependency on rand_core only because different versions in the dependency tree break compilation.
+  # rand_core: 0.4
+  rand                : 0.6.5
+
+
+  typename            : 0.1.0
+
+  # Optional dependencies
+  #
+  hyper               : { version: 0.12.25, optional: true }
