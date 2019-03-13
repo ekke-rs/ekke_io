@@ -81,7 +81,13 @@ impl Rpc
 
 			addr.send( IpcMessage::new( service, error, MessageType::Error, conn_id ) )
 
-				.then( move |r| { r.context( "Rpc::error_response -> IpcPeer: mailbox error." ).unwraps( &log ); Ok(())} )
+				.then( move |r|
+				{
+					r.map_err( |e| format_err!( "Rpc::error_response -> IpcPeer: mailbox error.: {}", e ) )
+					 .unwraps( &log );
+
+					Ok(())
+				})
 
 		);
 	}
@@ -174,10 +180,11 @@ impl Rpc
 
 				Arbiter::spawn( async move
 				{
-					let try_resp = awaits!( addr.send( de ) );
+					let resp = awaits!( addr.send( de ) )
 
-					let resp = try_resp.context( format!( "Rpc::Handler<IpcRequestIn> -> {}: mailbox error.", &name ) )
-					    .unwraps( &log );
+						.map_err( |e| format_err!( "Rpc::Handler<IpcRequestIn> -> {}: mailbox error: {}", &name, e ) )
+					   .unwraps( &log )
+					;
 
 					awaits!( ipc_peer.send( resp ) ).unwraps( &log );
 

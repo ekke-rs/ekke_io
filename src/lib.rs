@@ -98,7 +98,7 @@ mod import
 			                        Message, Recipient, Supervised, SystemService, dev::ToEnvelope           },
 		actix_async_await :: { ResponseStdFuture as ActixFuture                                             },
 
-		failure           :: { Fail, Error, ResultExt as _                                                  },
+		failure           :: { Fail, Error, format_err, ResultExt as _                                      },
 
 		futures           :: { channel, future::{ join_all, ok }                                            },
 		futures_util      :: { future::{ FutureExt }, try_future::TryFutureExt                              },
@@ -110,7 +110,7 @@ mod import
 		serde_cbor        :: { from_slice as des                                                            },
 
 		slog              :: { Drain, Logger, trace, debug, info, warn, error, crit, o                      },
-		slog_unwraps      :: { ResultExt                                                                    },
+		slog_unwraps      :: { ResultExt as _                                                               },
 
 		std               :: { any::{ Any, TypeId }, cell::RefCell, convert::From, convert::TryFrom,
 		                       env, fmt, future::Future as StdFuture, net::SocketAddr, path::PathBuf,
