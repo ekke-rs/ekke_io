@@ -118,8 +118,7 @@ mod import
 
 		// tokio::prelude::Future allows to use .then, but I imagine there is a better way...
 		//
-		tokio             :: { codec::{ Framed, Decoder }, io::{AsyncRead, AsyncWrite}, net::UnixStream,
-		                       net::UnixListener                                                            },
+		tokio             :: { codec::{ Framed, Decoder }, io::{AsyncRead, AsyncWrite}                      },
 		tokio::prelude    :: { Future as _, stream::{ SplitSink, SplitStream, Stream } },
 		tokio_async_await :: { await as awaits, stream::StreamExt, sink::SinkExt                            },
 		tokio_serde_cbor  :: { Codec                                                                        },
