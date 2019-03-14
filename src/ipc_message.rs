@@ -9,19 +9,14 @@
 //! Your service actor must return a response from it's handler for the request.
 //
 
-use crate :: { import::*, impl_message_response, ConnID, EkkeIoError } ;
+use crate :: { import::*, ConnID, EkkeIoError } ;
 
-
-// No longer compiles if the doc is above this derive
-//
-impl_message_response!( IpcMessage );
-//
 
 /// Represents a message that goes over the wire. It always contains a string service name
 /// to allow dispatching in the receiving application. A connection ID allows connection tracking.
 ///
 ///
-#[ derive( Debug, Serialize, Deserialize, Message )]
+#[ derive( Debug, Serialize, Deserialize, Message, MessageResponse )]
 //
 pub struct IpcMessage
 {

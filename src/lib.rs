@@ -15,7 +15,6 @@
 #![ forbid( unsafe_code ) ]
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures ) ]
 
-mod actix_helpers;
 mod conn_id;
 mod rpc;
 mod errors;
@@ -95,7 +94,7 @@ mod import
 	{
 
 		actix             :: { Actor, Addr, Arbiter, AsyncContext, Context, Handler, MailboxError,
-			                        Message, Recipient, Supervised, SystemService, dev::ToEnvelope           },
+			                        Message, MessageResponse, Recipient, Supervised, SystemService, dev::ToEnvelope           },
 		actix_async_await :: { ResponseStdFuture as ActixFuture                                             },
 
 		failure           :: { Fail, Error, format_err, ResultExt as _                                      },
