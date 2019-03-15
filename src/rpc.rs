@@ -7,8 +7,8 @@ use crate::
 	  EkkeResult      ,
 	  MessageType     ,
 	  ConnID          ,
-	  IpcRequestIn  ,
-	  IpcRequestOut     ,
+	  IpcRequestIn    ,
+	  IpcRequestOut   ,
 	  IpcResponse     ,
 	  IpcError        ,
 	  IpcMessage      ,
@@ -26,10 +26,10 @@ pub(crate) mod register_service;
 ///
 pub struct Rpc
 {
-	handlers : HashMap< TypeId, Box< dyn Any > >                             ,
+	handlers : HashMap< TypeId, Box< dyn Any > >                                                              ,
 	responses: Rc<RefCell< HashMap< ConnID, channel::oneshot::Sender< Result<IpcResponse, EkkeIoError> > > >> ,
-	log      : Logger                                                        ,
-	matcher  : fn( &Self, Logger, IpcMessage, Recipient< IpcMessage > )              ,
+	log      : Logger                                                                                         ,
+	matcher  : fn( &Self, Logger, IpcMessage, Recipient< IpcMessage > )                                       ,
 }
 
 impl Actor for Rpc { type Context = Context<Self>; }

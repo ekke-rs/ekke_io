@@ -10,7 +10,7 @@ features:
 
   http_server : [ hyper       ]
   tokio-rt    : [ actix/tokio ]
-  wasm-rt     : [ actix/wasm  ]
+  wasm-rt     : [ actix/wasm, rand/wasm-bindgen ]
 
 
 dependencies:

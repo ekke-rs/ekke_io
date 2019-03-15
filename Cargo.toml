@@ -54,7 +54,7 @@ version = "0.1.6"
 [features]
 http_server = ["hyper"]
 tokio-rt = ["actix/tokio"]
-wasm-rt = ["actix/wasm"]
+wasm-rt = ["actix/wasm", "rand/wasm-bindgen"]
 
 [package]
 authors = ["Naja Melan <najamelan@autistici.org>"]

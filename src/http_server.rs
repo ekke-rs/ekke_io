@@ -3,6 +3,10 @@ use crate :: { import::*, Rpc };
 use hyper:: { Body, Request, Response, Server, service::service_fn };
 
 
+// using this and -> impl ResponseFuture doesn't work as long as we need the compat
+//
+// pub type ResponseFuture = StdFuture< Output = Result< Response<Body>, hyper::Error > >;
+//
 pub type ResponseFuture = Pin< Box< dyn StdFuture< Output = Result< Response<Body>, hyper::Error > > + Send > >;
 pub type Responder      = Box< Fn( Request<Body>, Addr<Rpc>, Logger ) -> ResponseFuture + Send + Sync + 'static >;
 
